@@ -155,7 +155,30 @@
       <button id="prioritySettingsBtn" class="btn btn-tool">
         <span class="btn-icon">⭐</span> 優先生徒設定
       </button>
+      <button id="saveBtn" class="btn btn-tool">
+        <span class="btn-icon">💾</span> セーブ
+      </button>
+      <button id="loadBtn" class="btn btn-tool">
+        <span class="btn-icon">📂</span> ロード
+      </button>
     </section>
+
+    <!-- セーブ・ロードモーダル -->
+    <div id="saveLoadModal" class="modal hidden">
+      <div class="modal-overlay save-load-overlay"></div>
+      <div class="modal-content save-load-modal-content">
+        <div class="modal-header">
+          <h3 id="saveLoadTitle">💾 セーブ</h3>
+          <div class="save-load-header-actions">
+            <button class="btn btn-small save-load-mode-btn" id="toggleModeBtn">📂 ロードに切替</button>
+            <button class="modal-close-btn" id="closeSaveLoadModal">✕</button>
+          </div>
+        </div>
+        <div class="modal-body">
+          <div class="save-slot-grid" id="saveSlotGrid"></div>
+        </div>
+      </div>
+    </div>
 
     <!-- 優先生徒設定モーダル -->
     <div id="priorityModal" class="modal hidden">

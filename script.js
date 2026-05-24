@@ -10,6 +10,7 @@ const FREQ_KEY = 'characterUsageFreq';
 const VIEW_STATE_KEY = 'tacticalViewState';
 const PRIORITY_ST_KEY = 'priorityStrikerCharacters';
 const PRIORITY_SP_KEY = 'prioritySpecialCharacters';
+const SAVE_SLOTS_KEY = 'tacticalSaveSlots';
 
 let teamData = [];
 let editIndex = null;
@@ -1121,7 +1122,7 @@ function addPriorityCharacter(type) {
 
 document.getElementById('prioritySettingsBtn').addEventListener('click', openPriorityModal);
 document.getElementById('closePriorityModal').addEventListener('click', closePriorityModal);
-document.querySelector('.modal-overlay').addEventListener('click', closePriorityModal);
+document.querySelector('#priorityModal .modal-overlay').addEventListener('click', closePriorityModal);
 
 document.getElementById('addStrikerBtn').addEventListener('click', () => {
   addPriorityCharacter('striker');
@@ -1154,6 +1155,218 @@ document.getElementById('savePriorityBtn').addEventListener('click', () => {
     timer: 1500,
     showConfirmButton: false
   });
+});
+
+// ========================================
+// セーブ・ロード機能
+// ========================================
+
+const SAVE_SLOT_COUNT = 12;
+const SEASON_OPTIONS = ['Season 8', 'Season 9', 'Season 10'];
+let saveSlots = new Array(SAVE_SLOT_COUNT).fill(null);
+let saveLoadMode = 'save'; // 'save' or 'load'
+
+function saveSlotsToStorage() {
+  localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(saveSlots));
+}
+
+function loadSlotsFromStorage() {
+  const stored = localStorage.getItem(SAVE_SLOTS_KEY);
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    saveSlots = new Array(SAVE_SLOT_COUNT).fill(null);
+    for (let i = 0; i < SAVE_SLOT_COUNT; i++) {
+      saveSlots[i] = parsed[i] || null;
+    }
+  }
+}
+
+function openSaveLoadModal(mode) {
+  saveLoadMode = mode;
+  updateSaveLoadModalUI();
+  renderSaveSlots();
+  document.getElementById('saveLoadModal').classList.remove('hidden');
+}
+
+function closeSaveLoadModal() {
+  document.getElementById('saveLoadModal').classList.add('hidden');
+}
+
+function updateSaveLoadModalUI() {
+  const title = document.getElementById('saveLoadTitle');
+  const toggleBtn = document.getElementById('toggleModeBtn');
+  if (saveLoadMode === 'save') {
+    title.textContent = '💾 セーブ';
+    toggleBtn.textContent = '📂 ロードに切替';
+  } else {
+    title.textContent = '📂 ロード';
+    toggleBtn.textContent = '💾 セーブに切替';
+  }
+}
+
+function renderSaveSlots() {
+  const grid = document.getElementById('saveSlotGrid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < SAVE_SLOT_COUNT; i++) {
+    const slot = saveSlots[i];
+    const slotEl = document.createElement('div');
+    slotEl.className = `save-slot ${saveLoadMode}-mode${slot ? ' has-data' : ' empty'}`;
+
+    if (slot) {
+      const entryCount = slot.data ? slot.data.length : 0;
+      const dateStr = slot.savedAt || '';
+      slotEl.innerHTML = `
+        <div class="save-slot-header">
+          <span class="save-slot-number">SLOT ${i + 1}</span>
+          <span class="save-slot-season">${slot.season || ''}</span>
+        </div>
+        <div class="save-slot-info">
+          <span class="save-slot-count">${entryCount}件</span>
+          <span class="save-slot-date">${dateStr}</span>
+        </div>
+        <button class="save-slot-delete" data-index="${i}" title="削除">🗑</button>
+      `;
+    } else {
+      slotEl.innerHTML = `
+        <div class="save-slot-header">
+          <span class="save-slot-number">SLOT ${i + 1}</span>
+        </div>
+        <div class="save-slot-empty">空</div>
+      `;
+    }
+
+    // Slot click handler
+    slotEl.addEventListener('click', (e) => {
+      if (e.target.closest('.save-slot-delete')) return;
+      if (saveLoadMode === 'save') {
+        saveToSlot(i);
+      } else {
+        if (slot) loadFromSlot(i);
+      }
+    });
+
+    // Delete button handler
+    const deleteBtn = slotEl.querySelector('.save-slot-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteSlot(i);
+      });
+    }
+
+    grid.appendChild(slotEl);
+  }
+}
+
+function saveToSlot(index) {
+  if (teamData.length === 0) {
+    Swal.fire('データなし', '保存する編成データがありません', 'info');
+    return;
+  }
+
+  const existing = saveSlots[index];
+  const seasonOptions = SEASON_OPTIONS.reduce((acc, s) => {
+    acc[s] = s;
+    return acc;
+  }, {});
+
+  Swal.fire({
+    title: `SLOT ${index + 1} にセーブ`,
+    input: 'select',
+    inputOptions: seasonOptions,
+    inputPlaceholder: 'Seasonを選択',
+    inputValue: existing ? existing.season : SEASON_OPTIONS[SEASON_OPTIONS.length - 1],
+    showCancelButton: true,
+    confirmButtonText: 'セーブ',
+    cancelButtonText: 'キャンセル',
+    inputValidator: (value) => {
+      if (!value) return 'Seasonを選択してください';
+    },
+    text: existing ? '既存のデータを上書きします。' : undefined,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const now = new Date();
+      const dateStr = now.toLocaleString('ja-JP', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+      saveSlots[index] = {
+        data: JSON.parse(JSON.stringify(teamData)),
+        season: result.value,
+        savedAt: dateStr,
+        label: ''
+      };
+      saveSlotsToStorage();
+      renderSaveSlots();
+      Swal.fire({
+        title: 'セーブ完了',
+        text: `SLOT ${index + 1} (${result.value}) に保存しました`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+function loadFromSlot(index) {
+  const slot = saveSlots[index];
+  if (!slot) return;
+
+  const entryCount = slot.data ? slot.data.length : 0;
+  Swal.fire({
+    title: `SLOT ${index + 1} からロード`,
+    html: `<p><strong>${slot.season}</strong> / ${entryCount}件 / ${slot.savedAt}</p><p style="color: #e07070; margin-top: 8px;">現在の編成データは上書きされます。</p>`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'ロード',
+    cancelButtonText: 'キャンセル',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      teamData = slot.data.map(migrateEntry);
+      saveData();
+      populateTable();
+      closeSaveLoadModal();
+      Swal.fire({
+        title: 'ロード完了',
+        text: `SLOT ${index + 1} (${slot.season}) のデータを読み込みました`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+function deleteSlot(index) {
+  const slot = saveSlots[index];
+  if (!slot) return;
+
+  Swal.fire({
+    title: `SLOT ${index + 1} を削除`,
+    text: `${slot.season} / ${slot.data.length}件のデータを削除しますか？`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '削除',
+    cancelButtonText: 'キャンセル',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      saveSlots[index] = null;
+      saveSlotsToStorage();
+      renderSaveSlots();
+    }
+  });
+}
+
+document.getElementById('saveBtn').addEventListener('click', () => openSaveLoadModal('save'));
+document.getElementById('loadBtn').addEventListener('click', () => openSaveLoadModal('load'));
+document.getElementById('closeSaveLoadModal').addEventListener('click', closeSaveLoadModal);
+document.querySelector('.save-load-overlay').addEventListener('click', closeSaveLoadModal);
+document.getElementById('toggleModeBtn').addEventListener('click', () => {
+  saveLoadMode = saveLoadMode === 'save' ? 'load' : 'save';
+  updateSaveLoadModalUI();
+  renderSaveSlots();
 });
 
 // ========================================
@@ -1194,6 +1407,7 @@ Promise.all([
 document.addEventListener('DOMContentLoaded', () => {
   loadHistory();
   loadViewState();
+  loadSlotsFromStorage();
   updateToggleButtons();
   loadData();
   populateTable();

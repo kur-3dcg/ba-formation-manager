@@ -1079,6 +1079,10 @@ body {
   border-radius: 8px !important;
 }
 
+.swal2-container {
+  z-index: 3000 !important;
+}
+
 /* ========================================
    RESPONSIVE
    ======================================== */
@@ -1426,29 +1430,187 @@ body {
     width: 95%;
     max-height: 90vh;
   }
-  
+
   .modal-body {
     padding: 16px;
   }
-  
+
   .priority-char img {
     width: 30px;
     height: 30px;
   }
-  
+
   .priority-char span {
     font-size: 0.75rem;
   }
-  
+
   .priority-add-wrapper {
     flex-direction: column;
   }
-  
+
   .priority-dropdown {
     width: 100%;
   }
-  
+
   .btn-add-priority {
     width: 100%;
+  }
+}
+
+/* ========================================
+   SAVE/LOAD MODAL
+   ======================================== */
+
+.save-load-modal-content {
+  max-width: 720px;
+}
+
+.save-load-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.save-load-mode-btn {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.save-load-mode-btn:hover {
+  background: var(--primary-blue-dark);
+}
+
+.save-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.save-slot {
+  background: var(--bg-input);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+.save-slot:hover {
+  border-color: var(--primary-blue);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.save-slot.save-mode:hover {
+  border-color: var(--primary-blue);
+  background: var(--defense-bg);
+}
+
+.save-slot.load-mode.has-data:hover {
+  border-color: var(--success);
+  background: #eef8ef;
+}
+
+.save-slot.load-mode.empty {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.save-slot.load-mode.empty:hover {
+  border-color: var(--border-color);
+  box-shadow: none;
+  transform: none;
+}
+
+.save-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.save-slot-number {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.save-slot-season {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--primary-blue-dark);
+  background: var(--defense-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.save-slot-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.save-slot-date {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.save-slot-count {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.save-slot-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.save-slot-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.save-slot-delete:hover {
+  background: var(--attack-bg);
+  color: var(--danger);
+}
+
+@media (max-width: 768px) {
+  .save-slot-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .save-load-modal-content {
+    max-width: 95%;
+  }
+
+  .save-slot {
+    min-height: 100px;
+    padding: 10px;
   }
 }
