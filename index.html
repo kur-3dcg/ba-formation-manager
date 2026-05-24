@@ -139,27 +139,34 @@
     </section>
 
     <section class="tools-section">
-      <button id="exportBtn" class="btn btn-tool">
+      <!-- PC専用: エクスポート・インポート -->
+      <button id="exportBtn" class="btn btn-tool tools-pc-only">
         <span class="btn-icon">📤</span> エクスポート
       </button>
-      <label class="btn btn-tool import-label">
+      <label class="btn btn-tool import-label tools-pc-only">
         <span class="btn-icon">📥</span> インポート
         <input type="file" id="importFile" accept=".json" />
       </label>
+      <!-- 常時表示: 攻め・メモトグル -->
       <button id="toggleAttackBtn" class="btn btn-tool">
         <span class="btn-icon">⚔</span> <span id="attackLabel">攻めを非表示</span>
       </button>
       <button id="toggleMemoBtn" class="btn btn-tool">
         <span class="btn-icon">📝</span> <span id="memoLabel">メモを表示</span>
       </button>
-      <button id="prioritySettingsBtn" class="btn btn-tool">
+      <!-- PC: そのまま表示 / スマホ: 格納 -->
+      <button id="prioritySettingsBtn" class="btn btn-tool tools-extra">
         <span class="btn-icon">⭐</span> 優先生徒設定
       </button>
-      <button id="saveBtn" class="btn btn-tool">
+      <button id="saveBtn" class="btn btn-tool tools-extra">
         <span class="btn-icon">💾</span> セーブ
       </button>
-      <button id="loadBtn" class="btn btn-tool">
+      <button id="loadBtn" class="btn btn-tool tools-extra">
         <span class="btn-icon">📂</span> ロード
+      </button>
+      <!-- スマホ専用: 格納トグル -->
+      <button id="toolsMoreBtn" class="btn btn-tool tools-more-btn">
+        <span class="btn-icon">⚙</span> <span id="toolsMoreLabel">その他 ▼</span>
       </button>
     </section>
 
@@ -229,6 +236,7 @@
               <th data-sort="name" class="th-name">ユーザー</th>
               <th class="th-defense">🛡 防衛</th>
               <th class="th-attack">⚔ 攻め</th>
+              <th class="th-combined">編成</th>
               <th data-sort="date" class="th-date">日付</th>
               <th class="th-actions">操作</th>
             </tr>

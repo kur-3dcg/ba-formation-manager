@@ -486,13 +486,19 @@ function populateTable() {
       <td>
         <div class="user-cell">
           ${userIcon}
-          <span style="font-size: ${nameFontSize};" title="${entry.name}">${displayName}</span>
+          <span style="font-size: ${nameFontSize};" title="${entry.name}">${displayName}</span>${hasMemo ? '<span class="memo-badge" title="メモあり">📝</span>' : ''}
         </div>
       </td>
-      <td><div class="char-cell defense-cell">${defenseChars || '<span style="color: var(--text-muted);">-</span>'}</div></td>
+      <td class="defense-col"><div class="char-cell defense-cell">${defenseChars || '<span style="color: var(--text-muted);">-</span>'}</div></td>
       <td class="attack-col" style="display: ${viewState.showAttack ? '' : 'none'}"><div class="char-cell attack-cell">${attackChars || '<span style="color: var(--text-muted);">-</span>'}</div></td>
+      <td class="combined-col" style="display: none;">
+        <div class="combined-cell">
+          <div class="char-cell defense-cell">${defenseChars || '<span style="color: var(--text-muted);">-</span>'}</div>
+          ${viewState.showAttack && attackChars ? `<div class="char-cell attack-cell">${attackChars}</div>` : ''}
+        </div>
+      </td>
       <td class="date-cell">${entry.date}</td>
-      <td>
+      <td class="actions-col">
         <div class="actions-cell ${viewState.showAttack ? 'two-rows' : ''}">
           <button class="action-btn favorite-btn ${entry.favorite ? 'active' : ''}" data-index="${index}">⭐Fav</button>
           <button class="action-btn edit-btn" data-index="${index}">🔧編集</button>
@@ -513,7 +519,7 @@ function populateTable() {
       memoRow.dataset.memoFor = index;
       memoRow.style.display = viewState.showMemo ? '' : 'none';
       
-      const colSpan = viewState.showAttack ? 5 : 4;
+      const colSpan = 6;
       memoRow.innerHTML = `
         <td colspan="${colSpan}">
           <div class="collapsible-content">
@@ -527,11 +533,15 @@ function populateTable() {
       tbody.appendChild(memoRow);
     }
 
-    // 行クリックで選択
+    // 行クリックで選択（スマホではアクションポップアップ表示）
     row.addEventListener('click', (e) => {
       if (e.target.closest('button')) return;
       document.querySelectorAll('#teamTable tbody tr.data-row').forEach(r => r.classList.remove('selected'));
       row.classList.add('selected');
+
+      if (window.innerWidth <= 768) {
+        showActionPopup(index, entry, e);
+      }
     });
 
     // お気に入りボタン
@@ -564,7 +574,7 @@ function populateTable() {
       const historyRow = document.createElement('tr');
       historyRow.className = 'history-row';
       historyRow.dataset.historyFor = index;
-      const colSpan = viewState.showAttack ? 5 : 4;
+      const colSpan = 6;
       historyRow.innerHTML = `<td colspan="${colSpan}">
         <div class="history-container">
           ${history.map((e, i) => `
@@ -629,7 +639,7 @@ function populateTable() {
       const inventoryRow = document.createElement('tr');
       inventoryRow.className = 'inventory-row';
       inventoryRow.dataset.inventoryFor = index;
-      const colSpan = viewState.showAttack ? 5 : 4;
+      const colSpan = 6;
       inventoryRow.innerHTML = `<td colspan="${colSpan}">
         <div class="inventory-container">
           ${[...allChars].map(c => `
@@ -1367,6 +1377,96 @@ document.getElementById('toggleModeBtn').addEventListener('click', () => {
   saveLoadMode = saveLoadMode === 'save' ? 'load' : 'save';
   updateSaveLoadModalUI();
   renderSaveSlots();
+});
+
+// ========================================
+// スマホ用アクションポップアップ
+// ========================================
+
+function showActionPopup(index, entry, event) {
+  // 既存ポップアップを閉じる
+  closeActionPopup();
+
+  const popup = document.createElement('div');
+  popup.className = 'action-popup';
+  popup.id = 'actionPopup';
+
+  const displayName = entry.name.length > 10 ? entry.name.substring(0, 10) : entry.name;
+
+  popup.innerHTML = `
+    <div class="action-popup-header">
+      <span class="action-popup-name">${displayName}</span>
+      <button class="action-popup-close">✕</button>
+    </div>
+    <div class="action-popup-buttons">
+      <button class="action-popup-btn" data-action="favorite">⭐ ${entry.favorite ? 'Fav解除' : 'Fav'}</button>
+      <button class="action-popup-btn" data-action="edit">🔧 編集</button>
+      <button class="action-popup-btn" data-action="delete">🗑️ 削除</button>
+      <button class="action-popup-btn" data-action="history">📜 履歴</button>
+      <button class="action-popup-btn" data-action="inventory">🗃️ 所持</button>
+      <button class="action-popup-btn" data-action="share">🐦 共有</button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  // オーバーレイ
+  const overlay = document.createElement('div');
+  overlay.className = 'action-popup-overlay';
+  overlay.id = 'actionPopupOverlay';
+  document.body.appendChild(overlay);
+
+  // ボタンイベント
+  popup.querySelectorAll('.action-popup-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      closeActionPopup();
+      const tbody = document.querySelector('#teamTable tbody');
+      switch (action) {
+        case 'favorite': toggleFavorite(index); break;
+        case 'edit': editEntry(index); break;
+        case 'delete': deleteEntry(index); break;
+        case 'history':
+          // テーブル内の履歴ボタンをクリックさせる
+          const histBtn = tbody.querySelector(`.history-btn[data-index="${index}"]`);
+          if (histBtn) histBtn.click();
+          break;
+        case 'inventory':
+          const invBtn = tbody.querySelector(`.inventory-btn[data-index="${index}"]`);
+          if (invBtn) invBtn.click();
+          break;
+        case 'share':
+          const shrBtn = tbody.querySelector(`.share-btn[data-index="${index}"]`);
+          if (shrBtn) shrBtn.click();
+          break;
+      }
+    });
+  });
+
+  // 閉じるボタン・オーバーレイ
+  popup.querySelector('.action-popup-close').addEventListener('click', closeActionPopup);
+  overlay.addEventListener('click', closeActionPopup);
+}
+
+function closeActionPopup() {
+  const popup = document.getElementById('actionPopup');
+  const overlay = document.getElementById('actionPopupOverlay');
+  if (popup) popup.remove();
+  if (overlay) overlay.remove();
+}
+
+// ========================================
+// スマホ用ツール格納トグル
+// ========================================
+
+let toolsExtraOpen = false;
+
+document.getElementById('toolsMoreBtn').addEventListener('click', () => {
+  toolsExtraOpen = !toolsExtraOpen;
+  document.querySelectorAll('.tools-extra').forEach(el => {
+    el.classList.toggle('tools-extra-visible', toolsExtraOpen);
+  });
+  document.getElementById('toolsMoreLabel').textContent = toolsExtraOpen ? 'その他 ▲' : 'その他 ▼';
 });
 
 // ========================================

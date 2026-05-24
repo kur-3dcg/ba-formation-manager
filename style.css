@@ -663,6 +663,11 @@ body {
   display: none;
 }
 
+/* PC: 格納トグルボタンは非表示 */
+.tools-more-btn {
+  display: none;
+}
+
 /* ========================================
    TABLE
    ======================================== */
@@ -693,6 +698,11 @@ body {
   cursor: pointer;
   position: relative;
   transition: color 0.3s ease;
+}
+
+/* PC: 統合カラムヘッダーは非表示 */
+.th-combined {
+  display: none;
 }
 
 #teamTable th[data-sort]:hover {
@@ -783,6 +793,11 @@ body {
   border: 2px solid var(--border-color);
 }
 
+.memo-badge {
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+
 .user-cell span {
   font-weight: 700;
   color: var(--text-primary);
@@ -839,6 +854,22 @@ body {
 .attack-hidden .char-cell.defense-cell img {
   width: 60px;
   height: 60px;
+}
+
+/* Combined cell (mobile: 防衛+攻めを1セルに統合) */
+.combined-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.combined-cell .defense-cell {
+  padding-bottom: 2px;
+}
+
+.combined-cell .attack-cell {
+  padding-top: 2px;
+  border-top: 1px dashed var(--border-color);
 }
 
 /* Date cell */
@@ -1126,6 +1157,25 @@ body {
   .tools-section {
     justify-content: center;
   }
+
+  /* スマホ: エクスポート・インポート非表示 */
+  .tools-pc-only {
+    display: none !important;
+  }
+
+  /* スマホ: 格納トグルボタン表示 */
+  .tools-more-btn {
+    display: inline-flex !important;
+  }
+
+  /* スマホ: 優先・セーブ・ロードはデフォルト非表示 */
+  .tools-extra {
+    display: none !important;
+  }
+
+  .tools-extra.tools-extra-visible {
+    display: inline-flex !important;
+  }
   
   #teamTable {
     font-size: 0.8rem;
@@ -1170,6 +1220,40 @@ body {
   .section-toggle-btn {
     padding: 5px 10px;
     font-size: 0.75rem;
+  }
+
+  /* スマホ: 防衛・攻め別カラムを隠し、統合カラムを表示 */
+  #teamTable .th-defense,
+  #teamTable .th-attack,
+  #teamTable .defense-col,
+  #teamTable .attack-col {
+    display: none !important;
+  }
+
+  #teamTable .th-combined {
+    display: table-cell !important;
+  }
+
+  #teamTable .combined-col {
+    display: table-cell !important;
+  }
+
+  .combined-cell .char-cell img {
+    width: 34px;
+    height: 34px;
+    min-width: 22px;
+    min-height: 22px;
+  }
+
+  /* スマホ: 操作列を非表示 */
+  #teamTable .th-actions,
+  #teamTable .actions-col {
+    display: none !important;
+  }
+
+  /* 行タップで操作可能なヒント */
+  #teamTable tbody tr.data-row {
+    cursor: pointer;
   }
 }
 
@@ -1613,4 +1697,91 @@ body {
     min-height: 100px;
     padding: 10px;
   }
+}
+
+/* ========================================
+   ACTION POPUP (MOBILE)
+   ======================================== */
+
+.action-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 4000;
+}
+
+.action-popup {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-white);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  z-index: 4001;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  animation: popup-slide-up 0.2s ease-out;
+}
+
+@keyframes popup-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.action-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 12px;
+}
+
+.action-popup-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary-blue-dark);
+}
+
+.action-popup-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.action-popup-close:hover {
+  background: var(--border-light);
+  color: var(--text-primary);
+}
+
+.action-popup-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.action-popup-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  background: var(--bg-input);
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-popup-btn:active {
+  background: var(--defense-bg);
+  border-color: var(--primary-blue);
 }
