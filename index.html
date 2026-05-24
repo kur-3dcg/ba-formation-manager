@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>戦術対抗戦 編成管理</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700;900&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DKEWBG0PYP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DKEWBG0PYP');
+  </script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1><span class="header-icon">⚔</span> 戦術対抗戦 編成管理</h1>
+      <p class="header-subtitle">TACTICAL BATTLE FORMATION MANAGER</p>
+    </header>
+
+    <button id="pageShareBtn" title="このツールをTwitterで共有">
+      <img src="https://abs.twimg.com/favicons/twitter.2.ico" alt="X" class="twitter-logo">
+    </button>
+
+    <!-- ハンバーガーメニュー -->
+    <button id="hamburgerBtn" class="hamburger-btn" aria-label="メニューを開く" aria-expanded="false">
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+      <span class="hamburger-line"></span>
+    </button>
+    <div id="hamburgerOverlay" class="hamburger-overlay"></div>
+    <nav id="hamburgerMenu" class="hamburger-menu">
+      <ul class="hamburger-links">
+        <li><a href="https://kur-3dcg.github.io/blue-archive-tl-tool/" target="_blank">TL作支援ツール</a></li>
+        <li><a href="https://kur-3dcg.github.io/Furniture-placement-simulator/" target="_blank">家具シミュレーションツール</a></li>
+        <li><a href="https://kur-3dcg.github.io/Tactical-Battle-Stone-Accounting/index.html" target="_blank">石割収支管理ツール</a></li>
+        <li class="hamburger-divider"></li>
+        <li><a href="https://docs.google.com/forms/d/e/1FAIpQLSfbC2m9DnDTvmMuWw5SsKjXTsPyqAYXzNdVg7iJrhbo5PQIEw/viewform?usp=dialog" target="_blank">ご意見・ご感想・バグ報告</a></li>
+        <li><a href="https://www.youtube.com/@kur_3dcg" target="_blank">Youtube対抗戦チャンネル</a></li>
+        <li><a href="https://x.com/kur_3dcg" target="_blank">更新・開発情報 (X)</a></li>
+      </ul>
+    </nav>
+
+    <section class="form-section">
+      <div class="section-header with-toggle" id="formSectionHeader">
+        <span class="section-icon">📝</span>
+        <h2>編成登録</h2>
+        <button class="section-toggle-btn" id="newEntryBtn">
+          <span>➕</span> 新規登録
+        </button>
+      </div>
+      
+      <div class="form-content hidden" id="formContent">
+        <div id="teamForm">
+          <div class="form-row">
+            <div class="form-group user-group">
+              <label>ユーザー</label>
+              <div class="user-input-wrapper">
+                <div class="dropdown-wrapper" id="dropdown-userIcon"></div>
+                <input type="text" id="username" placeholder="ユーザー名" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="group-label defense-label">🛡 防衛 (STRIKER)</label>
+              <div class="char-slots">
+                <div class="dropdown-wrapper" id="dropdown-D1"></div>
+                <div class="dropdown-wrapper" id="dropdown-D2"></div>
+                <div class="dropdown-wrapper" id="dropdown-D3"></div>
+                <div class="dropdown-wrapper" id="dropdown-D4"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="group-label defense-label">🛡 防衛 (SPECIAL)</label>
+              <div class="char-slots">
+                <div class="dropdown-wrapper" id="dropdown-S1"></div>
+                <div class="dropdown-wrapper" id="dropdown-S2"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="group-label attack-label">⚔ 攻め (STRIKER)</label>
+              <div class="char-slots">
+                <div class="dropdown-wrapper" id="dropdown-A1"></div>
+                <div class="dropdown-wrapper" id="dropdown-A2"></div>
+                <div class="dropdown-wrapper" id="dropdown-A3"></div>
+                <div class="dropdown-wrapper" id="dropdown-A4"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="group-label attack-label">⚔ 攻め (SPECIAL)</label>
+              <div class="char-slots">
+                <div class="dropdown-wrapper" id="dropdown-SP1"></div>
+                <div class="dropdown-wrapper" id="dropdown-SP2"></div>
+              </div>
+            </div>
+            <div class="form-group attack-actions-group">
+              <label class="group-label">&nbsp;</label>
+              <div class="attack-action-buttons">
+                <button type="button" id="clearAttackBtn" class="btn btn-small btn-clear">
+                  <span>🗑️</span> 攻めをクリア
+                </button>
+                <button type="button" id="undoAttackBtn" class="btn btn-small btn-undo" style="display: none;">
+                  <span>↩️</span> 元に戻す
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group memo-group">
+              <label>メモ</label>
+              <textarea id="memo" placeholder="メモを入力（任意）"></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="submitBtn" class="btn btn-primary">
+              <span class="btn-icon">➕</span> 追加
+            </button>
+            <button id="cancelBtn" class="btn btn-secondary">
+              <span class="btn-icon">✖</span> 閉じる
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tools-section">
+      <button id="exportBtn" class="btn btn-tool">
+        <span class="btn-icon">📤</span> エクスポート
+      </button>
+      <label class="btn btn-tool import-label">
+        <span class="btn-icon">📥</span> インポート
+        <input type="file" id="importFile" accept=".json" />
+      </label>
+      <button id="toggleAttackBtn" class="btn btn-tool">
+        <span class="btn-icon">⚔</span> <span id="attackLabel">攻めを非表示</span>
+      </button>
+      <button id="toggleMemoBtn" class="btn btn-tool">
+        <span class="btn-icon">📝</span> <span id="memoLabel">メモを表示</span>
+      </button>
+      <button id="prioritySettingsBtn" class="btn btn-tool">
+        <span class="btn-icon">⭐</span> 優先生徒設定
+      </button>
+    </section>
+
+    <!-- 優先生徒設定モーダル -->
+    <div id="priorityModal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⭐ 優先表示生徒の設定</h3>
+          <button class="modal-close-btn" id="closePriorityModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-description">ドロップダウンの上部に表示する生徒を設定できます。ドラッグ&ドロップで順番を変更できます。</p>
+          
+          <div class="priority-section">
+            <h4 class="priority-section-title defense-label">🛡 STRIKER 優先生徒</h4>
+            <div class="priority-selected" id="priorityStrikerSelected"></div>
+            <div class="priority-add-wrapper">
+              <div class="dropdown-wrapper priority-dropdown" id="dropdown-addStriker"></div>
+              <button type="button" class="btn btn-small btn-add-priority" id="addStrikerBtn">追加</button>
+            </div>
+          </div>
+          
+          <div class="priority-section">
+            <h4 class="priority-section-title attack-label">💫 SPECIAL 優先生徒</h4>
+            <div class="priority-selected" id="prioritySpecialSelected"></div>
+            <div class="priority-add-wrapper">
+              <div class="dropdown-wrapper priority-dropdown" id="dropdown-addSpecial"></div>
+              <button type="button" class="btn btn-small btn-add-priority" id="addSpecialBtn">追加</button>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="resetPriorityBtn" class="btn btn-secondary">デフォルトに戻す</button>
+          <button id="savePriorityBtn" class="btn btn-primary">保存して閉じる</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="table-section">
+      <div class="section-header">
+        <span class="section-icon">📋</span>
+        <h2>登録一覧</h2>
+      </div>
+      
+      <div class="table-container">
+        <table id="teamTable">
+          <thead>
+            <tr>
+              <th data-sort="name" class="th-name">ユーザー</th>
+              <th class="th-defense">🛡 防衛</th>
+              <th class="th-attack">⚔ 攻め</th>
+              <th data-sort="date" class="th-date">日付</th>
+              <th class="th-actions">操作</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="app-footer">
+      <p>BLUE ARCHIVE - TACTICAL FORMATION TOOL</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
