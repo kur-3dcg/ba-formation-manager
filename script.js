@@ -1172,7 +1172,7 @@ document.getElementById('savePriorityBtn').addEventListener('click', () => {
 // ========================================
 
 const SAVE_SLOT_COUNT = 12;
-const SEASON_OPTIONS = ['Season 8', 'Season 9', 'Season 10'];
+const SEASON_OPTIONS = ['Season 8', 'Season 9', 'Season 10', 'Season 11'];
 let saveSlots = new Array(SAVE_SLOT_COUNT).fill(null);
 let saveLoadMode = 'save'; // 'save' or 'load'
 
