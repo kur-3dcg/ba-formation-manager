@@ -10,6 +10,7 @@ const FREQ_KEY = 'characterUsageFreq';
 const VIEW_STATE_KEY = 'tacticalViewState';
 const PRIORITY_ST_KEY = 'priorityStrikerCharacters';
 const PRIORITY_SP_KEY = 'prioritySpecialCharacters';
+const SAVE_SLOTS_KEY = 'tacticalSaveSlots';
 
 let teamData = [];
 let editIndex = null;
@@ -28,11 +29,11 @@ let userPriorityStriker = [];
 let userPrioritySpecial = [];
 
 const defaultTopCharacters = [
-  'シロコ*テラー','シュン','イオリ（水着）','マリナ（チーパオ）','ハスミ（水着）','ハナコ（水着）',  'ホシノ（攻撃）',
+  'シロコ＊テラー','シュン','イオリ（水着）','マリナ（チーパオ）','ハスミ（水着）','ハナコ（水着）',  'ホシノ（攻撃）',
   'マリナ','ネル（バニーガール）', 'ミヤコ', 'ユウカ', 'ミヤコ（水着）','カノエ', 'ホシノ（防御）','アツコ', 'ツバキ', 'エイミ','ハルカ',
   'ツルギ','チェリノ','ミカ','ハスミ（体操服）',
   'ヒナ（水着）','レンゲ（水着）','イオリ','ハルナ（正月）','ネル','ネル（制服）',
-  'ムツキ（正月）','ヨシミ（バンド）','ヒヨリ'
+  'ムツキ（正月）','ヨシミ（バンド）','ヒヨリ（水着）'
 ];
 
 const defaultTopCharactersSP = [
@@ -485,13 +486,19 @@ function populateTable() {
       <td>
         <div class="user-cell">
           ${userIcon}
-          <span style="font-size: ${nameFontSize};" title="${entry.name}">${displayName}</span>
+          <span style="font-size: ${nameFontSize};" title="${entry.name}">${displayName}</span>${hasMemo ? '<span class="memo-badge" title="メモあり">📝</span>' : ''}
         </div>
       </td>
-      <td><div class="char-cell defense-cell">${defenseChars || '<span style="color: var(--text-muted);">-</span>'}</div></td>
+      <td class="defense-col"><div class="char-cell defense-cell">${defenseChars || '<span style="color: var(--text-muted);">-</span>'}</div></td>
       <td class="attack-col" style="display: ${viewState.showAttack ? '' : 'none'}"><div class="char-cell attack-cell">${attackChars || '<span style="color: var(--text-muted);">-</span>'}</div></td>
+      <td class="combined-col" style="display: none;">
+        <div class="combined-cell">
+          <div class="char-cell defense-cell">${defenseChars || '<span style="color: var(--text-muted);">-</span>'}</div>
+          ${viewState.showAttack && attackChars ? `<div class="char-cell attack-cell">${attackChars}</div>` : ''}
+        </div>
+      </td>
       <td class="date-cell">${entry.date}</td>
-      <td>
+      <td class="actions-col">
         <div class="actions-cell ${viewState.showAttack ? 'two-rows' : ''}">
           <button class="action-btn favorite-btn ${entry.favorite ? 'active' : ''}" data-index="${index}">⭐Fav</button>
           <button class="action-btn edit-btn" data-index="${index}">🔧編集</button>
@@ -512,7 +519,7 @@ function populateTable() {
       memoRow.dataset.memoFor = index;
       memoRow.style.display = viewState.showMemo ? '' : 'none';
       
-      const colSpan = viewState.showAttack ? 5 : 4;
+      const colSpan = 6;
       memoRow.innerHTML = `
         <td colspan="${colSpan}">
           <div class="collapsible-content">
@@ -526,11 +533,15 @@ function populateTable() {
       tbody.appendChild(memoRow);
     }
 
-    // 行クリックで選択
+    // 行クリックで選択（スマホではアクションポップアップ表示）
     row.addEventListener('click', (e) => {
       if (e.target.closest('button')) return;
       document.querySelectorAll('#teamTable tbody tr.data-row').forEach(r => r.classList.remove('selected'));
       row.classList.add('selected');
+
+      if (window.innerWidth <= 768) {
+        showActionPopup(index, entry, e);
+      }
     });
 
     // お気に入りボタン
@@ -563,7 +574,7 @@ function populateTable() {
       const historyRow = document.createElement('tr');
       historyRow.className = 'history-row';
       historyRow.dataset.historyFor = index;
-      const colSpan = viewState.showAttack ? 5 : 4;
+      const colSpan = 6;
       historyRow.innerHTML = `<td colspan="${colSpan}">
         <div class="history-container">
           ${history.map((e, i) => `
@@ -628,7 +639,7 @@ function populateTable() {
       const inventoryRow = document.createElement('tr');
       inventoryRow.className = 'inventory-row';
       inventoryRow.dataset.inventoryFor = index;
-      const colSpan = viewState.showAttack ? 5 : 4;
+      const colSpan = 6;
       inventoryRow.innerHTML = `<td colspan="${colSpan}">
         <div class="inventory-container">
           ${[...allChars].map(c => `
@@ -1121,7 +1132,7 @@ function addPriorityCharacter(type) {
 
 document.getElementById('prioritySettingsBtn').addEventListener('click', openPriorityModal);
 document.getElementById('closePriorityModal').addEventListener('click', closePriorityModal);
-document.querySelector('.modal-overlay').addEventListener('click', closePriorityModal);
+document.querySelector('#priorityModal .modal-overlay').addEventListener('click', closePriorityModal);
 
 document.getElementById('addStrikerBtn').addEventListener('click', () => {
   addPriorityCharacter('striker');
@@ -1154,6 +1165,308 @@ document.getElementById('savePriorityBtn').addEventListener('click', () => {
     timer: 1500,
     showConfirmButton: false
   });
+});
+
+// ========================================
+// セーブ・ロード機能
+// ========================================
+
+const SAVE_SLOT_COUNT = 12;
+const SEASON_OPTIONS = ['Season 8', 'Season 9', 'Season 10', 'Season 11'];
+let saveSlots = new Array(SAVE_SLOT_COUNT).fill(null);
+let saveLoadMode = 'save'; // 'save' or 'load'
+
+function saveSlotsToStorage() {
+  localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(saveSlots));
+}
+
+function loadSlotsFromStorage() {
+  const stored = localStorage.getItem(SAVE_SLOTS_KEY);
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    saveSlots = new Array(SAVE_SLOT_COUNT).fill(null);
+    for (let i = 0; i < SAVE_SLOT_COUNT; i++) {
+      saveSlots[i] = parsed[i] || null;
+    }
+  }
+}
+
+function openSaveLoadModal(mode) {
+  saveLoadMode = mode;
+  updateSaveLoadModalUI();
+  renderSaveSlots();
+  document.getElementById('saveLoadModal').classList.remove('hidden');
+}
+
+function closeSaveLoadModal() {
+  document.getElementById('saveLoadModal').classList.add('hidden');
+}
+
+function updateSaveLoadModalUI() {
+  const title = document.getElementById('saveLoadTitle');
+  const toggleBtn = document.getElementById('toggleModeBtn');
+  if (saveLoadMode === 'save') {
+    title.textContent = '💾 セーブ';
+    toggleBtn.textContent = '📂 ロードに切替';
+  } else {
+    title.textContent = '📂 ロード';
+    toggleBtn.textContent = '💾 セーブに切替';
+  }
+}
+
+function renderSaveSlots() {
+  const grid = document.getElementById('saveSlotGrid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < SAVE_SLOT_COUNT; i++) {
+    const slot = saveSlots[i];
+    const slotEl = document.createElement('div');
+    slotEl.className = `save-slot ${saveLoadMode}-mode${slot ? ' has-data' : ' empty'}`;
+
+    if (slot) {
+      const entryCount = slot.data ? slot.data.length : 0;
+      const dateStr = slot.savedAt || '';
+      slotEl.innerHTML = `
+        <div class="save-slot-header">
+          <span class="save-slot-number">SLOT ${i + 1}</span>
+          <span class="save-slot-season">${slot.season || ''}</span>
+        </div>
+        <div class="save-slot-info">
+          <span class="save-slot-count">${entryCount}件</span>
+          <span class="save-slot-date">${dateStr}</span>
+        </div>
+        <button class="save-slot-delete" data-index="${i}" title="削除">🗑</button>
+      `;
+    } else {
+      slotEl.innerHTML = `
+        <div class="save-slot-header">
+          <span class="save-slot-number">SLOT ${i + 1}</span>
+        </div>
+        <div class="save-slot-empty">空</div>
+      `;
+    }
+
+    // Slot click handler
+    slotEl.addEventListener('click', (e) => {
+      if (e.target.closest('.save-slot-delete')) return;
+      if (saveLoadMode === 'save') {
+        saveToSlot(i);
+      } else {
+        if (slot) loadFromSlot(i);
+      }
+    });
+
+    // Delete button handler
+    const deleteBtn = slotEl.querySelector('.save-slot-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteSlot(i);
+      });
+    }
+
+    grid.appendChild(slotEl);
+  }
+}
+
+function saveToSlot(index) {
+  if (teamData.length === 0) {
+    Swal.fire('データなし', '保存する編成データがありません', 'info');
+    return;
+  }
+
+  const existing = saveSlots[index];
+  const seasonOptions = SEASON_OPTIONS.reduce((acc, s) => {
+    acc[s] = s;
+    return acc;
+  }, {});
+
+  Swal.fire({
+    title: `SLOT ${index + 1} にセーブ`,
+    input: 'select',
+    inputOptions: seasonOptions,
+    inputPlaceholder: 'Seasonを選択',
+    inputValue: existing ? existing.season : SEASON_OPTIONS[SEASON_OPTIONS.length - 1],
+    showCancelButton: true,
+    confirmButtonText: 'セーブ',
+    cancelButtonText: 'キャンセル',
+    inputValidator: (value) => {
+      if (!value) return 'Seasonを選択してください';
+    },
+    text: existing ? '既存のデータを上書きします。' : undefined,
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const now = new Date();
+      const dateStr = now.toLocaleString('ja-JP', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+      saveSlots[index] = {
+        data: JSON.parse(JSON.stringify(teamData)),
+        season: result.value,
+        savedAt: dateStr,
+        label: ''
+      };
+      saveSlotsToStorage();
+      renderSaveSlots();
+      Swal.fire({
+        title: 'セーブ完了',
+        text: `SLOT ${index + 1} (${result.value}) に保存しました`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+function loadFromSlot(index) {
+  const slot = saveSlots[index];
+  if (!slot) return;
+
+  const entryCount = slot.data ? slot.data.length : 0;
+  Swal.fire({
+    title: `SLOT ${index + 1} からロード`,
+    html: `<p><strong>${slot.season}</strong> / ${entryCount}件 / ${slot.savedAt}</p><p style="color: #e07070; margin-top: 8px;">現在の編成データは上書きされます。</p>`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'ロード',
+    cancelButtonText: 'キャンセル',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      teamData = slot.data.map(migrateEntry);
+      saveData();
+      populateTable();
+      closeSaveLoadModal();
+      Swal.fire({
+        title: 'ロード完了',
+        text: `SLOT ${index + 1} (${slot.season}) のデータを読み込みました`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      });
+    }
+  });
+}
+
+function deleteSlot(index) {
+  const slot = saveSlots[index];
+  if (!slot) return;
+
+  Swal.fire({
+    title: `SLOT ${index + 1} を削除`,
+    text: `${slot.season} / ${slot.data.length}件のデータを削除しますか？`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: '削除',
+    cancelButtonText: 'キャンセル',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      saveSlots[index] = null;
+      saveSlotsToStorage();
+      renderSaveSlots();
+    }
+  });
+}
+
+document.getElementById('saveBtn').addEventListener('click', () => openSaveLoadModal('save'));
+document.getElementById('loadBtn').addEventListener('click', () => openSaveLoadModal('load'));
+document.getElementById('closeSaveLoadModal').addEventListener('click', closeSaveLoadModal);
+document.querySelector('.save-load-overlay').addEventListener('click', closeSaveLoadModal);
+document.getElementById('toggleModeBtn').addEventListener('click', () => {
+  saveLoadMode = saveLoadMode === 'save' ? 'load' : 'save';
+  updateSaveLoadModalUI();
+  renderSaveSlots();
+});
+
+// ========================================
+// スマホ用アクションポップアップ
+// ========================================
+
+function showActionPopup(index, entry, event) {
+  // 既存ポップアップを閉じる
+  closeActionPopup();
+
+  const popup = document.createElement('div');
+  popup.className = 'action-popup';
+  popup.id = 'actionPopup';
+
+  const displayName = entry.name.length > 10 ? entry.name.substring(0, 10) : entry.name;
+
+  popup.innerHTML = `
+    <div class="action-popup-header">
+      <span class="action-popup-name">${displayName}</span>
+      <button class="action-popup-close">✕</button>
+    </div>
+    <div class="action-popup-buttons">
+      <button class="action-popup-btn" data-action="favorite">⭐ ${entry.favorite ? 'Fav解除' : 'Fav'}</button>
+      <button class="action-popup-btn" data-action="edit">🔧 編集</button>
+      <button class="action-popup-btn" data-action="delete">🗑️ 削除</button>
+      <button class="action-popup-btn" data-action="history">📜 履歴</button>
+      <button class="action-popup-btn" data-action="inventory">🗃️ 所持</button>
+      <button class="action-popup-btn" data-action="share">🐦 共有</button>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  // オーバーレイ
+  const overlay = document.createElement('div');
+  overlay.className = 'action-popup-overlay';
+  overlay.id = 'actionPopupOverlay';
+  document.body.appendChild(overlay);
+
+  // ボタンイベント
+  popup.querySelectorAll('.action-popup-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      closeActionPopup();
+      const tbody = document.querySelector('#teamTable tbody');
+      switch (action) {
+        case 'favorite': toggleFavorite(index); break;
+        case 'edit': editEntry(index); break;
+        case 'delete': deleteEntry(index); break;
+        case 'history':
+          // テーブル内の履歴ボタンをクリックさせる
+          const histBtn = tbody.querySelector(`.history-btn[data-index="${index}"]`);
+          if (histBtn) histBtn.click();
+          break;
+        case 'inventory':
+          const invBtn = tbody.querySelector(`.inventory-btn[data-index="${index}"]`);
+          if (invBtn) invBtn.click();
+          break;
+        case 'share':
+          const shrBtn = tbody.querySelector(`.share-btn[data-index="${index}"]`);
+          if (shrBtn) shrBtn.click();
+          break;
+      }
+    });
+  });
+
+  // 閉じるボタン・オーバーレイ
+  popup.querySelector('.action-popup-close').addEventListener('click', closeActionPopup);
+  overlay.addEventListener('click', closeActionPopup);
+}
+
+function closeActionPopup() {
+  const popup = document.getElementById('actionPopup');
+  const overlay = document.getElementById('actionPopupOverlay');
+  if (popup) popup.remove();
+  if (overlay) overlay.remove();
+}
+
+// ========================================
+// スマホ用ツール格納トグル
+// ========================================
+
+let toolsExtraOpen = false;
+
+document.getElementById('toolsMoreBtn').addEventListener('click', () => {
+  toolsExtraOpen = !toolsExtraOpen;
+  document.querySelectorAll('.tools-extra').forEach(el => {
+    el.classList.toggle('tools-extra-visible', toolsExtraOpen);
+  });
+  document.getElementById('toolsMoreLabel').textContent = toolsExtraOpen ? 'その他 ▲' : 'その他 ▼';
 });
 
 // ========================================
@@ -1194,6 +1507,7 @@ Promise.all([
 document.addEventListener('DOMContentLoaded', () => {
   loadHistory();
   loadViewState();
+  loadSlotsFromStorage();
   updateToggleButtons();
   loadData();
   populateTable();

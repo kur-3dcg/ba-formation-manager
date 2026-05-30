@@ -210,7 +210,7 @@
   {
     "name": "コノカ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/konoka.png"
-  },  
+  },
   {
     "name": "コハル",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/koharu.png"
@@ -432,12 +432,12 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hasumi.png"
   },
   {
-    "name": "ハスミ（体操服）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hasumi_gym.png"
-  },
-  {
     "name": "ハスミ（水着）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hasumi_swimsuit.png"
+  },
+  {
+    "name": "ハスミ（体操服）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hasumi_gym.png"
   },
   {
     "name": "ハナコ（水着）",
@@ -518,10 +518,6 @@
   {
     "name": "ホシノ（防御）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hoshino_rinsen_d.png"
-  },
-  {
-    "name": "ホシノ（臨戦）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hoshino_rinsen.png"
   },
   {
     "name": "マキ",
@@ -647,7 +643,7 @@
     "name": "ユカリ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/yukari.png"
   },
-    {
+  {
     "name": "ユカリ（水着）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/yukari_swimsuit.png"
   },
@@ -656,16 +652,16 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/yuzu.png"
   },
   {
+    "name": "ヨシミ（バンド）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/yoshimi_band.png"
+  },
+  {
     "name": "ラブ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/rabu.png"
   },
   {
     "name": "リオ（臨戦）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/rio_rinsen.png"
-  },
-  {
-    "name": "ヨシミ（バンド）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/yoshimi_band.png"
   },
   {
     "name": "ルミ",
@@ -691,7 +687,7 @@
     "name": "レンゲ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/renge.png"
   },
-   {
+  {
     "name": "レンゲ（水着）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/renge_swimsuit.png"
   },
@@ -712,7 +708,7 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/syokuhou.png"
   },
   {
-    "name": "未選択",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/noimage.png"
+    "name": "ハルカ（ドレス）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/haruka_dress.png"
   }
 ]
