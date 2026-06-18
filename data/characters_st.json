@@ -384,6 +384,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/nagusa.png"
   },
   {
+    "name": "ナグサ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/nagusa_swimsuit.png"
+  },
+  {
     "name": "ナツ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/natsu.png"
   },
@@ -446,6 +450,10 @@
   {
     "name": "ハルカ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/haruka.png"
+  },
+  {
+    "name": "ハルカ（ドレス）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/haruka_dress.png"
   },
   {
     "name": "ハルナ",
@@ -706,9 +714,5 @@
   {
     "name": "食蜂操祈",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/syokuhou.png"
-  },
-  {
-    "name": "ハルカ（ドレス）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/haruka_dress.png"
   }
 ]
