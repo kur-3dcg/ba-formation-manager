@@ -219,6 +219,13 @@ function refreshDropdowns() {
   createDropdown('A1', sortedSt, () => {}); createDropdown('A2', sortedSt, () => {});
   createDropdown('A3', sortedSt, () => {}); createDropdown('A4', sortedSt, () => {});
   createDropdown('SP1', sortedSp, () => {}); createDropdown('SP2', sortedSp, () => {});
+
+  // 検索ドロップダウンも更新
+  if (document.getElementById('dropdown-search-D1')) {
+    createDropdown('search-D1', sortedSt, () => {}); createDropdown('search-D2', sortedSt, () => {});
+    createDropdown('search-D3', sortedSt, () => {}); createDropdown('search-D4', sortedSt, () => {});
+    createDropdown('search-S1', sortedSp, () => {}); createDropdown('search-S2', sortedSp, () => {});
+  }
 }
 
 // 攻め編成のバックアップ（元に戻す用）
@@ -1470,6 +1477,168 @@ document.getElementById('toolsMoreBtn').addEventListener('click', () => {
 });
 
 // ========================================
+// 攻め履歴検索
+// ========================================
+
+function showSearch() {
+  document.getElementById('searchContent').classList.remove('hidden');
+  document.getElementById('searchBtn').style.display = 'none';
+}
+
+function hideSearch() {
+  document.getElementById('searchContent').classList.add('hidden');
+  document.getElementById('searchBtn').style.display = 'inline-flex';
+  document.getElementById('searchResults').innerHTML = '';
+  // 検索フォームのドロップダウンをリセット
+  ['search-D1', 'search-D2', 'search-D3', 'search-D4', 'search-S1', 'search-S2'].forEach(id => {
+    const wrapper = document.getElementById(`dropdown-${id}`);
+    if (!wrapper) return;
+    const el = wrapper.querySelector('.dropdown-select');
+    if (el) { el.innerHTML = '<span class="placeholder-text">未選択</span>'; el.dataset.value = ''; }
+  });
+}
+
+function initSearchDropdowns() {
+  const sortedSt = sortCharactersByPriority(stCharacterData, usageFreq, fixedTopCharacters);
+  const sortedSp = sortCharactersByPriority(spCharacterData, usageFreq, fixedTopCharactersSP);
+  createDropdown('search-D1', sortedSt, () => {}); createDropdown('search-D2', sortedSt, () => {});
+  createDropdown('search-D3', sortedSt, () => {}); createDropdown('search-D4', sortedSt, () => {});
+  createDropdown('search-S1', sortedSp, () => {}); createDropdown('search-S2', sortedSp, () => {});
+}
+
+function getSearchValue(id) {
+  const wrapper = document.getElementById(`dropdown-${id}`);
+  if (!wrapper) return '';
+  const el = wrapper.querySelector('.dropdown-select');
+  return el && el.dataset.value ? el.dataset.value : '';
+}
+
+function matchesDefense(entry, sD1, sD2, sD3, sD4, sS1, sS2) {
+  // STRIKER: 指定されたスロットのみ位置一致で判定
+  if (sD1 && entry.D1 !== sD1) return false;
+  if (sD2 && entry.D2 !== sD2) return false;
+  if (sD3 && entry.D3 !== sD3) return false;
+  if (sD4 && entry.D4 !== sD4) return false;
+
+  // SPECIAL: 順番不問
+  const searchSPs = [sS1, sS2].filter(Boolean);
+  const entrySPs = [entry.S1, entry.S2].filter(Boolean);
+  for (const sp of searchSPs) {
+    if (!entrySPs.includes(sp)) return false;
+  }
+
+  return true;
+}
+
+function executeSearch() {
+  const sD1 = getSearchValue('search-D1'), sD2 = getSearchValue('search-D2');
+  const sD3 = getSearchValue('search-D3'), sD4 = getSearchValue('search-D4');
+  const sS1 = getSearchValue('search-S1'), sS2 = getSearchValue('search-S2');
+
+  if (!sD1 && !sD2 && !sD3 && !sD4 && !sS1 && !sS2) {
+    Swal.fire('エラー', '検索条件を1つ以上設定してください', 'error');
+    return;
+  }
+
+  const results = [];
+
+  // historyMapの全エントリを走査
+  for (const [name, histories] of Object.entries(historyMap)) {
+    histories.forEach(entry => {
+      if (matchesDefense(entry, sD1, sD2, sD3, sD4, sS1, sS2)) {
+        results.push({ ...entry, playerName: name });
+      }
+    });
+  }
+
+  // teamData（現在の編成）も検索対象
+  teamData.forEach(entry => {
+    if (matchesDefense(entry, sD1, sD2, sD3, sD4, sS1, sS2)) {
+      results.push({ ...entry, playerName: entry.name, isCurrent: true });
+    }
+  });
+
+  renderSearchResults(results);
+}
+
+function renderSearchResults(results) {
+  const container = document.getElementById('searchResults');
+  const allImages = { ...stImages, ...spImages };
+
+  if (results.length === 0) {
+    container.innerHTML = '<div class="search-no-results">該当する履歴がありません</div>';
+    return;
+  }
+
+  // 日付降順でソート
+  results.sort((a, b) => {
+    if (a.isCurrent && !b.isCurrent) return -1;
+    if (!a.isCurrent && b.isCurrent) return 1;
+    return parseJapaneseDate(b.date) - parseJapaneseDate(a.date);
+  });
+
+  const imgTag = (name) => {
+    if (!name) return '';
+    const src = allImages[name] || '';
+    return `<img src="${src}" alt="${name}" title="${name}">`;
+  };
+
+  let html = `<div class="search-result-count">🔍 ${results.length}件ヒット</div>`;
+
+  results.forEach(entry => {
+    const label = entry.isCurrent ? '（現在の編成）' : '';
+    html += `
+      <div class="search-result-entry">
+        <div class="search-result-header">
+          <span class="player-name">${entry.playerName}</span>
+          <span>${entry.date || ''}${label}</span>
+        </div>
+        <div class="search-result-formations">
+          <div class="search-result-group">
+            <div class="search-result-label defense">🛡 防衛</div>
+            <div class="search-result-chars defense">
+              ${[entry.D1, entry.D2, entry.D3, entry.D4].filter(Boolean).map(imgTag).join('')}
+              ${[entry.S1, entry.S2].filter(Boolean).map(imgTag).join('')}
+            </div>
+          </div>
+          <div class="search-result-group">
+            <div class="search-result-label attack">⚔ 攻め</div>
+            <div class="search-result-chars attack">
+              ${[entry.A1, entry.A2, entry.A3, entry.A4].filter(Boolean).map(imgTag).join('')}
+              ${[entry.SP1, entry.SP2].filter(Boolean).map(imgTag).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+document.getElementById('searchBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  showSearch();
+});
+
+document.getElementById('searchSectionHeader').addEventListener('click', (e) => {
+  if (e.target.closest('.section-toggle-btn')) return;
+  const content = document.getElementById('searchContent');
+  if (!content.classList.contains('hidden')) {
+    hideSearch();
+  }
+});
+
+document.getElementById('executeSearchBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  executeSearch();
+});
+
+document.getElementById('cancelSearchBtn').addEventListener('click', () => {
+  hideSearch();
+});
+
+// ========================================
 // 初期化
 // ========================================
 
@@ -1499,6 +1668,8 @@ Promise.all([
   createDropdown('A1', sortedSt, () => {}); createDropdown('A2', sortedSt, () => {});
   createDropdown('A3', sortedSt, () => {}); createDropdown('A4', sortedSt, () => {});
   createDropdown('SP1', sortedSp, () => {}); createDropdown('SP2', sortedSp, () => {});
+
+  initSearchDropdowns();
 
   loadData();
   populateTable();
