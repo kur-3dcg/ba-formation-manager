@@ -56,6 +56,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/alice_rinsen.png"
   },
   {
+    "name": "アリス（臨戦）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/alice_rinsen_ex2.png"
+  },
+  {
     "name": "アル",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/aru.png"
   },
@@ -420,6 +424,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/noa_pajama.png"
   },
   {
+    "name": "ノア（パジャマ）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/noa_pajama_ex2.png"
+  },
+  {
     "name": "ノゾミ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/nozomi.png"
   },
@@ -668,6 +676,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/rabu.png"
   },
   {
+    "name": "ラブ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/rabu_ex2.png"
+  },
+  {
     "name": "リオ（臨戦）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/rio_rinsen.png"
   },
@@ -714,5 +726,17 @@
   {
     "name": "食蜂操祈",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/syokuhou.png"
+  },
+  {
+    "name": "キサキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kisaki_swimsuit.png"
+  },
+  {
+    "name": "シュン（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shun_swimsuit.png"
+  },
+  {
+    "name": "シュエリン（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shueirin_swimsuit.png"
   }
 ]

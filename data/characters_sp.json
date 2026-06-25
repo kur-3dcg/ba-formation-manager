@@ -52,6 +52,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/eimi_swimsuit.png"
   },
   {
+    "name": "エリカ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/erika.png"
+  },
+  {
     "name": "カエデ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/kaede.png"
   },
@@ -292,6 +296,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/miyu_swimsuit.png"
   },
   {
+    "name": "ムツキ（ドレス）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/mutsuki_dress.png"
+  },
+  {
     "name": "モエ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/moe.png"
   },
@@ -330,13 +338,5 @@
   {
     "name": "初音ミク",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/miku.png"
-  },
-  {
-    "name": "エリカ",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/erika.png"
-  },
-  {
-    "name": "ムツキ（ドレス）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/mutsuki_dress.png"
   }
 ]
