@@ -338,5 +338,17 @@
   {
     "name": "初音ミク",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/miku.png"
+  },
+  {
+    "name": "チアキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/tiaki_swimsuit.png"
+  },
+  {
+    "name": "イブキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/ibuki_swimsuit.png"
+  },
+  {
+    "name": "イブキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/ibuki_swimsuit_ex2.png"
   }
 ]

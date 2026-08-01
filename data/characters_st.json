@@ -372,6 +372,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/toki.png"
   },
   {
+    "name": "トキ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/toki_ex2.png"
+  },
+  {
     "name": "トキ（バニーガール）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/toki_bunnie.png"
   },
@@ -414,6 +418,10 @@
   {
     "name": "ネル（制服）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/neru_uniform.png"
+  },
+  {
+    "name": "ネル（制服）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/neru_uniform_ex2.png"
   },
   {
     "name": "ノア",
@@ -486,6 +494,10 @@
   {
     "name": "ヒナ（ドレス）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hina_dress.png"
+  },
+  {
+    "name": "ヒナ（ドレス）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hina_dress_ex2.png"
   },
   {
     "name": "ヒナ（水着）",
@@ -562,6 +574,10 @@
   {
     "name": "ミカ（水着）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/mika_swimsuit.png"
+  },
+  {
+    "name": "ミカ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/mika_swimsuit_ex2.png"
   },
   {
     "name": "ミサキ",
@@ -732,11 +748,31 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kisaki_swimsuit.png"
   },
   {
+    "name": "キサキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kisaki_swimsuit_ex2.png"
+  },
+  {
     "name": "シュン（水着）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shun_swimsuit.png"
   },
   {
+    "name": "シュン（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shun_swimsuit_ex2.png"
+  },
+  {
     "name": "シュエリン（水着）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shueirin_swimsuit.png"
+  },
+  {
+    "name": "イロハ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/iroha_swimsuit.png"
+  },
+  {
+    "name": "マコト（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/makoto_swimsuit.png"
+  },
+  {
+    "name": "サツキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/satsuki_swimsuit.png"
   }
 ]
