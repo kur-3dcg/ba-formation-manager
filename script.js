@@ -11,12 +11,15 @@ const VIEW_STATE_KEY = 'tacticalViewState';
 const PRIORITY_ST_KEY = 'priorityStrikerCharacters';
 const PRIORITY_SP_KEY = 'prioritySpecialCharacters';
 const SAVE_SLOTS_KEY = 'tacticalSaveSlots';
+const ANON_KEY = 'tacticalAnonymousProfiles';
+const NOIMAGE_URL = 'https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/noimage.png';
 
 let teamData = [];
 let editIndex = null;
 let currentSort = { key: null, asc: true };
 let historyMap = {};
 let usageFreq = {};
+let anonymousProfiles = {};
 
 // 表示状態（localStorageから復元）
 let viewState = {
@@ -29,18 +32,17 @@ let userPriorityStriker = [];
 let userPrioritySpecial = [];
 
 const defaultTopCharacters = [
-  'シロコ＊テラー','シュン','イオリ（水着）','マリナ（チーパオ）','ハスミ（水着）','ハナコ（水着）',  'ホシノ（攻撃）',
-  'マリナ','ネル（バニーガール）', 'ミヤコ', 'ユウカ', 'ミヤコ（水着）','カノエ', 'ホシノ（防御）','アツコ', 'ツバキ', 'エイミ','ハルカ',
-  'ツルギ','チェリノ','ミカ','ハスミ（体操服）',
-  'ヒナ（水着）','レンゲ（水着）','イオリ','ハルナ（正月）','ネル','ネル（制服）',
-  'ムツキ（正月）','ヨシミ（バンド）','ヒヨリ（水着）'
+  'シロコ＊テラー','シュン','イオリ（水着）','ハナコ（水着）', 'ホシノ（攻撃）',
+  'ユウカ','ツバキ','エイミ','マリナ','ネル（バニーガール）', 'ミヤコ',  'ミヤコ（水着）','カノエ', 'ホシノ（防御）','アツコ',
+  'ツルギ','チェリノ','ハスミ（体操服）',
+  'イオリ','ハルナ（正月）','ネル（制服）',
 ];
 
 const defaultTopCharactersSP = [
-  'シロコ（水着）','ミチル（ドレス）',
-  'ウタハ','アヤネ（水着）','サツキ',
-  'ヤクモ','サヤ（私服）', 
-  'アツコ（水着）', 'ヒビキ', 'レイサ（マジカル）', 
+  'ミチル（ドレス）','シロコ（水着）',
+  'ウタハ','レイサ（マジカル）', 'ヤクモ', 'イロハ',
+  'アツコ（水着）', 'ヒビキ', 
+  'アヤネ（水着）','サツキ','サヤ（私服）',
 ];
 
 // 実際に使用する優先生徒（ユーザー設定 or デフォルト）
@@ -83,7 +85,10 @@ function migrateEntry(entry) {
     SP1: entry.SP1 || '', SP2: entry.SP2 || '',
     date: entry.date || '',
     memo: entry.memo || '',
-    favorite: entry.favorite || false
+    favorite: entry.favorite || false,
+    D1_level: entry.D1_level || 0,
+    S1_level: entry.S1_level || 0,
+    S2_level: entry.S2_level || 0,
   };
 }
 
@@ -185,6 +190,219 @@ function loadViewState() {
 }
 
 // ========================================
+// 匿名プロファイル管理
+// ========================================
+
+function loadAnonymousProfiles() {
+  const raw = localStorage.getItem(ANON_KEY);
+  if (raw) anonymousProfiles = JSON.parse(raw);
+}
+
+function saveAnonymousProfiles() {
+  localStorage.setItem(ANON_KEY, JSON.stringify(anonymousProfiles));
+}
+
+function getFingerprintFromEntry(entry) {
+  return {
+    D1: entry.D1, D1_level: entry.D1_level || 0,
+    S1: entry.S1, S1_level: entry.S1_level || 0,
+    S2: entry.S2, S2_level: entry.S2_level || 0
+  };
+}
+
+function fingerprintMatch(a, b) {
+  return a.D1 === b.D1 && a.D1_level === b.D1_level &&
+         a.S1 === b.S1 && a.S1_level === b.S1_level &&
+         a.S2 === b.S2 && a.S2_level === b.S2_level;
+}
+
+function matchAnonymousFingerprint(fp) {
+  return Object.keys(anonymousProfiles).filter(name =>
+    anonymousProfiles[name].some(e => fingerprintMatch(e, fp))
+  );
+}
+
+function getNextAnonymousId() {
+  const nums = Object.keys(anonymousProfiles)
+    .filter(k => /^匿名_\d+$/.test(k))
+    .map(k => parseInt(k.replace('匿名_', '')));
+  const max = nums.length ? Math.max(...nums) : 0;
+  return `匿名_${String(max + 1).padStart(3, '0')}`;
+}
+
+function addAnonymousFingerprint(profileName, fp) {
+  if (!anonymousProfiles[profileName]) anonymousProfiles[profileName] = [];
+  if (!anonymousProfiles[profileName].some(e => fingerprintMatch(e, fp)))
+    anonymousProfiles[profileName].push(fp);
+  saveAnonymousProfiles();
+}
+
+function assignToProfile(entryIndex, profileName, fp) {
+  const entry = teamData[entryIndex];
+  entry.name = profileName;
+
+  addAnonymousFingerprint(profileName, fp);
+
+  // 既存の同名エントリがあれば履歴保存して上書き（重複排除）
+  const existingIdx = teamData.findIndex((e, i) => e.name === profileName && i !== entryIndex);
+  if (existingIdx !== -1) {
+    saveToHistory(profileName, { ...teamData[existingIdx] });
+    teamData.splice(existingIdx, 1);
+  }
+
+  saveData();
+  finalizeForm();
+}
+
+function handleAnonymousEntry(entryIndex, fp) {
+  const matches = matchAnonymousFingerprint(fp);
+  if (matches.length === 0) {
+    assignToProfile(entryIndex, getNextAnonymousId(), fp);
+  } else if (matches.length === 1) {
+    assignToProfile(entryIndex, matches[0], fp);
+  } else {
+    showDisambiguationDialog(entryIndex, matches, fp);
+  }
+}
+
+function showDisambiguationDialog(entryIndex, matches, fp) {
+  const allImages = { ...stImages, ...spImages };
+
+  function getRecentDefense(profileName) {
+    const current = teamData.find(e => e.name === profileName);
+    if (current) return current;
+    const hist = historyMap[profileName];
+    return hist && hist.length ? hist[0] : null;
+  }
+
+  const cardsHtml = matches.map(name => {
+    const def = getRecentDefense(name);
+    const imgs = def ? ['D1','D2','D3','D4','S1','S2']
+      .filter(s => def[s])
+      .map(s => `<img src="${allImages[def[s]] || ''}" title="${def[s]}">`)
+      .join('') : '（防衛なし）';
+    return `<div class="anon-choice-card">
+      <b>${name}</b>
+      <div class="anon-choice-imgs">${imgs}</div>
+      <button class="btn btn-small btn-primary anon-select-btn" data-profile="${name}">これを選択</button>
+    </div>`;
+  }).join('');
+
+  Swal.fire({
+    title: '匿名の判別',
+    html: `<p>同じ育成状態のプロファイルが複数存在します。どちらですか？</p>
+      <div class="anon-choices">
+        ${cardsHtml}
+        <button class="btn btn-small btn-secondary" id="anonNewBtn">新規として登録</button>
+      </div>`,
+    showConfirmButton: false,
+    didOpen: () => {
+      document.querySelectorAll('.anon-select-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          Swal.close();
+          assignToProfile(entryIndex, btn.dataset.profile, fp);
+        });
+      });
+      document.getElementById('anonNewBtn').addEventListener('click', () => {
+        Swal.close();
+        assignToProfile(entryIndex, getNextAnonymousId(), fp);
+      });
+    }
+  });
+}
+
+function showAnonymousManagerDialog() {
+  const anonEntries = teamData
+    .map((e, i) => ({ entry: e, index: i }))
+    .filter(({ entry }) => entry.name === '匿名');
+
+  if (anonEntries.length === 0) {
+    Swal.fire('完了', '振り分け対象の「匿名」エントリはありません', 'info');
+    return;
+  }
+
+  // 指紋でグループ化
+  const groups = [];
+  anonEntries.forEach(({ entry, index }) => {
+    const fp = getFingerprintFromEntry(entry);
+    const existing = groups.find(g => fingerprintMatch(g.fp, fp));
+    if (existing) {
+      existing.indices.push(index);
+    } else {
+      groups.push({ fp, indices: [index], entry });
+    }
+  });
+
+  let groupIdx = 0;
+
+  function processNextGroup() {
+    if (groupIdx >= groups.length) {
+      Swal.fire('完了', '匿名振り分けが完了しました', 'success');
+      return;
+    }
+    const group = groups[groupIdx];
+    const allImages = { ...stImages, ...spImages };
+    const def = group.entry;
+    const defImgs = ['D1','D2','D3','D4','S1','S2']
+      .filter(s => def[s])
+      .map(s => `<img src="${allImages[def[s]] || ''}" title="${def[s]}">`)
+      .join('');
+
+    const existingProfiles = Object.keys(anonymousProfiles);
+    const profileOptions = existingProfiles.map(name => {
+      const fp = anonymousProfiles[name][0] || {};
+      const imgs = ['D1','S1','S2'].map(s => fp[s] ? `<img src="${allImages[fp[s]] || ''}" title="${fp[s]}" style="width:28px;height:28px;border-radius:4px;margin:1px;">` : '').join('');
+      return `<div class="anon-choice-card">
+        <b>${name}</b>
+        <div class="anon-choice-imgs" style="display:inline-flex;">${imgs}</div>
+        <button class="btn btn-small btn-primary anon-select-btn" data-profile="${name}">選択</button>
+      </div>`;
+    }).join('');
+
+    Swal.fire({
+      title: `匿名振り分け (${groupIdx + 1}/${groups.length})`,
+      html: `<p>${group.indices.length}件の同じ編成があります</p>
+        <div class="anon-choice-imgs" style="margin-bottom:12px;">${defImgs}</div>
+        <div class="anon-choices">
+          ${profileOptions}
+          <button class="btn btn-small btn-secondary" id="anonNewBtn">新規プロファイルとして登録</button>
+        </div>`,
+      showConfirmButton: false,
+      didOpen: () => {
+        document.querySelectorAll('.anon-select-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            Swal.close();
+            const profileName = btn.dataset.profile;
+            group.indices.forEach(idx => {
+              teamData[idx].name = profileName;
+              addAnonymousFingerprint(profileName, group.fp);
+            });
+            saveData();
+            populateTable();
+            groupIdx++;
+            processNextGroup();
+          });
+        });
+        document.getElementById('anonNewBtn').addEventListener('click', () => {
+          Swal.close();
+          const newName = getNextAnonymousId();
+          group.indices.forEach(idx => {
+            teamData[idx].name = newName;
+          });
+          addAnonymousFingerprint(newName, group.fp);
+          saveData();
+          populateTable();
+          groupIdx++;
+          processNextGroup();
+        });
+      }
+    });
+  }
+
+  processNextGroup();
+}
+
+// ========================================
 // 優先生徒設定
 // ========================================
 
@@ -212,13 +430,21 @@ function refreshDropdowns() {
   const sortedSp = sortCharactersByPriority(spCharacterData, usageFreq, fixedTopCharactersSP);
   const allSorted = [...sortedSt, ...sortedSp];
 
-  createDropdown('userIcon', allSorted, () => {});
-  createDropdown('D1', sortedSt, () => {}); createDropdown('D2', sortedSt, () => {});
-  createDropdown('D3', sortedSt, () => {}); createDropdown('D4', sortedSt, () => {});
-  createDropdown('S1', sortedSp, () => {}); createDropdown('S2', sortedSp, () => {});
-  createDropdown('A1', sortedSt, () => {}); createDropdown('A2', sortedSt, () => {});
-  createDropdown('A3', sortedSt, () => {}); createDropdown('A4', sortedSt, () => {});
-  createDropdown('SP1', sortedSp, () => {}); createDropdown('SP2', sortedSp, () => {});
+  createDropdown('userIcon', allSorted, () => {}, { deselectable: true });
+  const ds = { deselectable: true };
+  createDropdown('D1', sortedSt, (ch) => showBadgeDialog('D1', ch), ds); createDropdown('D2', sortedSt, () => {}, ds);
+  createDropdown('D3', sortedSt, () => {}, ds); createDropdown('D4', sortedSt, () => {}, ds);
+  createDropdown('S1', sortedSp, (ch) => showBadgeDialog('S1', ch), ds); createDropdown('S2', sortedSp, (ch) => showBadgeDialog('S2', ch), ds);
+  createDropdown('A1', sortedSt, () => {}, ds); createDropdown('A2', sortedSt, () => {}, ds);
+  createDropdown('A3', sortedSt, () => {}, ds); createDropdown('A4', sortedSt, () => {}, ds);
+  createDropdown('SP1', sortedSp, () => {}, ds); createDropdown('SP2', sortedSp, () => {}, ds);
+
+  // 検索ドロップダウンも更新
+  if (document.getElementById('dropdown-search-D1')) {
+    createDropdown('search-D1', sortedSt, () => {}); createDropdown('search-D2', sortedSt, () => {});
+    createDropdown('search-D3', sortedSt, () => {}); createDropdown('search-D4', sortedSt, () => {});
+    createDropdown('search-S1', sortedSp, () => {}); createDropdown('search-S2', sortedSp, () => {});
+  }
 }
 
 // 攻め編成のバックアップ（元に戻す用）
@@ -273,6 +499,78 @@ function undoAttackClear() {
 }
 
 // ========================================
+// バッジ選択（★/固有）
+// ========================================
+
+// 未設定(0) → ★1-4 → 固有1-4 の一本線スケール
+const BADGE_SLOTS = ['D1', 'S1', 'S2'];
+const LEVEL_MAX = 8;
+const LEVEL_LABELS = ['未設定', '★1', '★2', '★3', '★4', '固有1', '固有2', '固有3', '固有4'];
+
+let formBadgeValues = { D1: 0, S1: 0, S2: 0 };
+
+function getBadgeValue(slot) {
+  return formBadgeValues[slot] || 0;
+}
+
+function resetBadges() {
+  BADGE_SLOTS.forEach(slot => { formBadgeValues[slot] = 0; });
+}
+
+function updateDropdownBadge(slot) {
+  const wrapper = document.getElementById(`dropdown-${slot}`);
+  if (!wrapper) return;
+  const selected = wrapper.querySelector('.dropdown-select');
+  if (!selected || !selected.dataset.value) return;
+  const charName = selected.dataset.value;
+  const allImages = { ...stImages, ...spImages };
+  const imgSrc = allImages[charName] || '';
+  const level = formBadgeValues[slot] || 0;
+  if (!level) {
+    selected.innerHTML = `<img src="${imgSrc}" alt="${charName}">`;
+    return;
+  }
+  const icon = level <= 4 ? BADGE_YELLOW : BADGE_BLUE;
+  const num = level <= 4 ? level : level - 4;
+  selected.innerHTML = `<span class="char-badge-wrapper"><img src="${imgSrc}" alt="${charName}"><span class="char-badge-overlay"><span class="char-badge"><img src="${icon}" alt=""><b>${num}</b></span></span></span>`;
+}
+
+function showBadgeDialog(slot, charName) {
+  let level = formBadgeValues[slot] || 6;
+
+  Swal.fire({
+    title: charName,
+    html: `
+      <div class="badge-stepper">
+        <button type="button" class="stepper-btn" id="level-dec">−</button>
+        <span id="level-display" class="stepper-val">${LEVEL_LABELS[level]}</span>
+        <button type="button" class="stepper-btn" id="level-inc">+</button>
+      </div>`,
+    showCancelButton: true,
+    confirmButtonText: 'OK',
+    cancelButtonText: 'スキップ',
+    reverseButtons: true,
+    customClass: { confirmButton: 'badge-dlg-confirm', cancelButton: 'badge-dlg-cancel' },
+    didOpen: () => {
+      const display = document.getElementById('level-display');
+      document.getElementById('level-dec').addEventListener('click', () => {
+        level = Math.max(1, level - 1);
+        display.textContent = LEVEL_LABELS[level];
+      });
+      document.getElementById('level-inc').addEventListener('click', () => {
+        level = Math.min(LEVEL_MAX, level + 1);
+        display.textContent = LEVEL_LABELS[level];
+      });
+    },
+  }).then(result => {
+    if (result.isConfirmed) {
+      formBadgeValues[slot] = level;
+      updateDropdownBadge(slot);
+    }
+  });
+}
+
+// ========================================
 // お気に入り機能
 // ========================================
 
@@ -286,7 +584,49 @@ function toggleFavorite(index) {
 // フォーム表示/非表示
 // ========================================
 
+function updateUsernameDatalist() {
+  // カスタムオートコンプリートのデータを更新するだけ（リスト自体は動的生成）
+}
+
+function buildUsernameSuggestions(filter) {
+  const names = ['匿名', ...new Set(teamData.map(e => e.name).filter(n => n && n !== '匿名'))];
+  const lower = (filter || '').toLowerCase();
+  return lower ? names.filter(n => n.toLowerCase().includes(lower)) : names;
+}
+
+function showUsernameSuggestions(filter) {
+  const box = document.getElementById('usernameSuggestions');
+  if (!box) return;
+  const names = buildUsernameSuggestions(filter);
+  if (names.length === 0) { box.style.display = 'none'; return; }
+  box.innerHTML = names.map(n => `<div class="username-suggestion-item">${n}</div>`).join('');
+  box.style.display = 'block';
+  box.querySelectorAll('.username-suggestion-item').forEach(item => {
+    item.addEventListener('mousedown', e => {
+      e.preventDefault();
+      document.getElementById('username').value = item.textContent;
+      box.style.display = 'none';
+    });
+  });
+}
+
+function hideUsernameSuggestions() {
+  const box = document.getElementById('usernameSuggestions');
+  if (box) box.style.display = 'none';
+}
+
+(function setupUsernameAutocomplete() {
+  document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('username');
+    if (!input) return;
+    input.addEventListener('focus', () => showUsernameSuggestions(input.value));
+    input.addEventListener('input', () => showUsernameSuggestions(input.value));
+    input.addEventListener('blur', () => setTimeout(hideUsernameSuggestions, 150));
+  });
+})();
+
 function showForm() {
+  updateUsernameDatalist();
   document.getElementById('formContent').classList.remove('hidden');
   document.getElementById('newEntryBtn').style.display = 'none';
 }
@@ -302,7 +642,7 @@ function hideForm() {
 // ドロップダウン
 // ========================================
 
-function createDropdown(targetId, characters, onSelect) {
+function createDropdown(targetId, characters, onSelect, { deselectable = false } = {}) {
   const wrapper = document.getElementById(`dropdown-${targetId}`);
   if (!wrapper) return;
   wrapper.innerHTML = '';
@@ -325,13 +665,27 @@ function createDropdown(targetId, characters, onSelect) {
   // オプションコンテナ
   const optionsContainer = document.createElement('div');
   optionsContainer.className = 'dropdown-options-list';
-  
+
   characters.forEach(char => {
     const opt = document.createElement('div');
     opt.className = 'option';
     opt.dataset.name = char.name.toLowerCase();
+    opt.dataset.charName = char.name;
     opt.innerHTML = `<img src="${char.image}" alt="${char.name}"><span>${char.name}</span>`;
     opt.addEventListener('click', () => {
+      if (deselectable && selected.dataset.value === char.name) {
+        // 再クリックで選択解除
+        selected.innerHTML = '<span class="placeholder-text">未選択</span>';
+        selected.dataset.value = '';
+        opt.classList.remove('option-selected');
+        options.style.display = 'none';
+        searchInput.value = '';
+        filterOptions('');
+        onSelect('');
+        return;
+      }
+      optionsContainer.querySelectorAll('.option').forEach(o => o.classList.remove('option-selected'));
+      if (deselectable) opt.classList.add('option-selected');
       selected.innerHTML = `<img src="${char.image}" alt="${char.name}">`;
       selected.dataset.value = char.name;
       options.style.display = 'none';
@@ -349,24 +703,12 @@ function createDropdown(targetId, characters, onSelect) {
   function filterOptions(query) {
     const lowerQuery = query.toLowerCase();
     optionsContainer.querySelectorAll('.option').forEach(opt => {
-      const name = opt.dataset.name;
-      if (name.includes(lowerQuery)) {
-        opt.style.display = 'flex';
-      } else {
-        opt.style.display = 'none';
-      }
+      opt.style.display = opt.dataset.name.includes(lowerQuery) ? 'flex' : 'none';
     });
   }
 
-  // 検索入力イベント
-  searchInput.addEventListener('input', (e) => {
-    filterOptions(e.target.value);
-  });
-
-  // 検索欄クリック時にドロップダウンが閉じないように
-  searchInput.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
+  searchInput.addEventListener('input', (e) => { filterOptions(e.target.value); });
+  searchInput.addEventListener('click', (e) => { e.stopPropagation(); });
 
   selected.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -378,6 +720,21 @@ function createDropdown(targetId, characters, onSelect) {
     if (isOpening) {
       searchInput.value = '';
       filterOptions('');
+
+      // 選択済みを先頭へ移動＋ハイライト
+      if (deselectable) {
+        const currentValue = selected.dataset.value;
+        optionsContainer.querySelectorAll('.option').forEach(o => o.classList.remove('option-selected'));
+        if (currentValue) {
+          const selOpt = [...optionsContainer.querySelectorAll('.option')]
+            .find(o => o.dataset.charName === currentValue);
+          if (selOpt) {
+            selOpt.classList.add('option-selected');
+            optionsContainer.insertBefore(selOpt, optionsContainer.firstChild);
+          }
+        }
+      }
+
       setTimeout(() => searchInput.focus(), 10);
     }
   });
@@ -418,7 +775,38 @@ function getValue(id) {
 // テーブル描画
 // ========================================
 
+const BADGE_YELLOW = 'https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/icon/yellow_star.png';
+const BADGE_BLUE = 'https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/icon/blue_star.png';
+
+function makeCharImg(ch, allImages, slot, entry) {
+  const imgSrc = allImages[ch] || '';
+  const img = `<img src="${imgSrc}" alt="${ch}" title="${ch}">`;
+  const level = entry[`${slot}_level`] || 0;
+  if (!level) return img;
+
+  const icon = level <= 4 ? BADGE_YELLOW : BADGE_BLUE;
+  const num  = level <= 4 ? level : level - 4;
+  const badge = `<span class="char-badge"><img src="${icon}" alt=""><b>${num}</b></span>`;
+  return `<span class="char-badge-wrapper">${img}<span class="char-badge-overlay">${badge}</span></span>`;
+}
+
 function populateTable() {
+  // デフォルトソート（未指定時）: お気に入り→匿名→戦闘回数の多い順
+  if (!currentSort.key) {
+    teamData.sort((a, b) => {
+      if (a.favorite && !b.favorite) return -1;
+      if (!a.favorite && b.favorite) return 1;
+      const aAnon = /^匿名_/.test(a.name);
+      const bAnon = /^匿名_/.test(b.name);
+      if (aAnon && !bAnon) return -1;
+      if (!aAnon && bAnon) return 1;
+      if (aAnon && bAnon) return a.name.localeCompare(b.name, 'ja');
+      const aCount = 1 + (historyMap[a.name] || []).length;
+      const bCount = 1 + (historyMap[b.name] || []).length;
+      return bCount - aCount;
+    });
+  }
+
   const tbody = document.querySelector('#teamTable tbody');
   const table = document.getElementById('teamTable');
   tbody.innerHTML = '';
@@ -446,7 +834,12 @@ function populateTable() {
     if (entry.favorite) {
       row.classList.add('favorite');
     }
-    
+
+    // 匿名_XXXクラス
+    if (/^匿名_/.test(entry.name)) {
+      row.classList.add('anonymous');
+    }
+
     // 防衛・攻めそれぞれで重複チェック
     const defDup = hasDuplicateDefense(entry);
     const atkDup = hasDuplicateAttack(entry);
@@ -454,9 +847,8 @@ function populateTable() {
       row.classList.add('warning');
     }
 
-    const userIcon = entry.icon && allImages[entry.icon] 
-      ? `<img src="${allImages[entry.icon]}" alt="${entry.icon}" title="${entry.icon}">`
-      : '';
+    const iconSrc = entry.icon ? (allImages[entry.icon] || entry.icon) : NOIMAGE_URL;
+    const userIcon = `<img src="${iconSrc}" alt="${entry.name}" title="${entry.name}">`;
     
     // 名前を10文字に制限し、長さに応じてフォントサイズを調整
     let displayName = entry.name;
@@ -470,10 +862,15 @@ function populateTable() {
       nameFontSize = '0.85rem';
     }
     
-    const defenseChars = [entry.D1, entry.D2, entry.D3, entry.D4, entry.S1, entry.S2]
-      .filter(Boolean)
-      .map(ch => `<img src="${allImages[ch] || ''}" alt="${ch}" title="${ch}">`)
-      .join('');
+    const defenseChars = [
+      { slot: 'D1', ch: entry.D1 }, { slot: 'D2', ch: entry.D2 },
+      { slot: 'D3', ch: entry.D3 }, { slot: 'D4', ch: entry.D4 },
+      { slot: 'S1', ch: entry.S1 }, { slot: 'S2', ch: entry.S2 },
+    ].filter(x => x.ch)
+      .map(({ slot, ch }) => {
+        const isBadgeSlot = ['D1', 'S1', 'S2'].includes(slot);
+        return isBadgeSlot ? makeCharImg(ch, allImages, slot, entry) : `<img src="${allImages[ch] || ''}" alt="${ch}" title="${ch}">`;
+      }).join('');
     
     const attackChars = [entry.A1, entry.A2, entry.A3, entry.A4, entry.SP1, entry.SP2]
       .filter(Boolean)
@@ -706,6 +1103,10 @@ function editEntry(index) {
   setDropdown('SP1', entry.SP1); setDropdown('SP2', entry.SP2);
 
   document.getElementById('memo').value = entry.memo || '';
+  formBadgeValues.D1 = entry.D1_level || 0;
+  formBadgeValues.S1 = entry.S1_level || 0;
+  formBadgeValues.S2 = entry.S2_level || 0;
+  ['D1', 'S1', 'S2'].forEach(slot => updateDropdownBadge(slot));
   document.getElementById('teamForm').classList.add('editing');
   document.getElementById('submitBtn').innerHTML = '<span class="btn-icon">✔</span> 更新';
   document.getElementById('cancelBtn').innerHTML = '<span class="btn-icon">✖</span> 中止';
@@ -730,7 +1131,8 @@ function resetForm() {
   // 攻めバックアップをクリアし、元に戻すボタンを非表示
   attackBackup = null;
   document.getElementById('undoAttackBtn').style.display = 'none';
-  
+
+  resetBadges();
   editIndex = null;
 }
 
@@ -753,7 +1155,14 @@ function sortTableBy(key) {
     // お気に入りを常に上に
     if (a.favorite && !b.favorite) return -1;
     if (!a.favorite && b.favorite) return 1;
-    
+
+    // 匿名_XXXをお気に入りの次に
+    const aAnon = /^匿名_/.test(a.name);
+    const bAnon = /^匿名_/.test(b.name);
+    if (aAnon && !bAnon) return -1;
+    if (!aAnon && bAnon) return 1;
+    if (aAnon && bAnon) return a.name.localeCompare(b.name, 'ja');
+
     let valA = a[key], valB = b[key];
     if (key === 'date') { valA = parseJapaneseDate(valA); valB = parseJapaneseDate(valB); }
     if (valA < valB) return currentSort.asc ? -1 : 1;
@@ -816,14 +1225,24 @@ document.getElementById('submitBtn').addEventListener('click', e => {
   });
 
   const memo = document.getElementById('memo').value.trim();
-  const entry = { name, icon, D1, D2, D3, D4, S1, S2, A1, A2, A3, A4, SP1, SP2, date: today, memo };
+  const entry = {
+    name, icon, D1, D2, D3, D4, S1, S2, A1, A2, A3, A4, SP1, SP2, date: today, memo,
+    D1_level: getBadgeValue('D1'),
+    S1_level: getBadgeValue('S1'),
+    S2_level: getBadgeValue('S2'),
+  };
   const existingIndex = teamData.findIndex(e => e.name === name);
 
   if (editIndex !== null) {
     saveToHistory(teamData[editIndex].name, { ...teamData[editIndex] });
     teamData[editIndex] = entry;
+    const idx = editIndex;
     editIndex = null;
-    finalizeForm();
+    if (name === '匿名') {
+      handleAnonymousEntry(idx, getFingerprintFromEntry(entry));
+    } else {
+      finalizeForm();
+    }
     return;
   }
 
@@ -840,7 +1259,11 @@ document.getElementById('submitBtn').addEventListener('click', e => {
         saveToHistory(teamData[existingIndex].name, { ...teamData[existingIndex] });
         teamData[existingIndex] = entry;
         increaseUsage(D1, D2, D3, D4, S1, S2, A1, A2, A3, A4, SP1, SP2);
-        finalizeForm();
+        if (name === '匿名') {
+          handleAnonymousEntry(existingIndex, getFingerprintFromEntry(entry));
+        } else {
+          finalizeForm();
+        }
       }
     });
     return;
@@ -848,7 +1271,11 @@ document.getElementById('submitBtn').addEventListener('click', e => {
 
   teamData.push(entry);
   increaseUsage(D1, D2, D3, D4, S1, S2, A1, A2, A3, A4, SP1, SP2);
-  finalizeForm();
+  if (name === '匿名') {
+    handleAnonymousEntry(teamData.length - 1, getFingerprintFromEntry(entry));
+  } else {
+    finalizeForm();
+  }
 });
 
 document.getElementById('cancelBtn').addEventListener('click', () => {
@@ -1470,6 +1897,168 @@ document.getElementById('toolsMoreBtn').addEventListener('click', () => {
 });
 
 // ========================================
+// 攻め履歴検索
+// ========================================
+
+function showSearch() {
+  document.getElementById('searchContent').classList.remove('hidden');
+  document.getElementById('searchBtn').style.display = 'none';
+}
+
+function hideSearch() {
+  document.getElementById('searchContent').classList.add('hidden');
+  document.getElementById('searchBtn').style.display = 'inline-flex';
+  document.getElementById('searchResults').innerHTML = '';
+  // 検索フォームのドロップダウンをリセット
+  ['search-D1', 'search-D2', 'search-D3', 'search-D4', 'search-S1', 'search-S2'].forEach(id => {
+    const wrapper = document.getElementById(`dropdown-${id}`);
+    if (!wrapper) return;
+    const el = wrapper.querySelector('.dropdown-select');
+    if (el) { el.innerHTML = '<span class="placeholder-text">未選択</span>'; el.dataset.value = ''; }
+  });
+}
+
+function initSearchDropdowns() {
+  const sortedSt = sortCharactersByPriority(stCharacterData, usageFreq, fixedTopCharacters);
+  const sortedSp = sortCharactersByPriority(spCharacterData, usageFreq, fixedTopCharactersSP);
+  createDropdown('search-D1', sortedSt, () => {}); createDropdown('search-D2', sortedSt, () => {});
+  createDropdown('search-D3', sortedSt, () => {}); createDropdown('search-D4', sortedSt, () => {});
+  createDropdown('search-S1', sortedSp, () => {}); createDropdown('search-S2', sortedSp, () => {});
+}
+
+function getSearchValue(id) {
+  const wrapper = document.getElementById(`dropdown-${id}`);
+  if (!wrapper) return '';
+  const el = wrapper.querySelector('.dropdown-select');
+  return el && el.dataset.value ? el.dataset.value : '';
+}
+
+function matchesDefense(entry, sD1, sD2, sD3, sD4, sS1, sS2) {
+  // STRIKER: 指定されたスロットのみ位置一致で判定
+  if (sD1 && entry.D1 !== sD1) return false;
+  if (sD2 && entry.D2 !== sD2) return false;
+  if (sD3 && entry.D3 !== sD3) return false;
+  if (sD4 && entry.D4 !== sD4) return false;
+
+  // SPECIAL: 順番不問
+  const searchSPs = [sS1, sS2].filter(Boolean);
+  const entrySPs = [entry.S1, entry.S2].filter(Boolean);
+  for (const sp of searchSPs) {
+    if (!entrySPs.includes(sp)) return false;
+  }
+
+  return true;
+}
+
+function executeSearch() {
+  const sD1 = getSearchValue('search-D1'), sD2 = getSearchValue('search-D2');
+  const sD3 = getSearchValue('search-D3'), sD4 = getSearchValue('search-D4');
+  const sS1 = getSearchValue('search-S1'), sS2 = getSearchValue('search-S2');
+
+  if (!sD1 && !sD2 && !sD3 && !sD4 && !sS1 && !sS2) {
+    Swal.fire('エラー', '検索条件を1つ以上設定してください', 'error');
+    return;
+  }
+
+  const results = [];
+
+  // historyMapの全エントリを走査
+  for (const [name, histories] of Object.entries(historyMap)) {
+    histories.forEach(entry => {
+      if (matchesDefense(entry, sD1, sD2, sD3, sD4, sS1, sS2)) {
+        results.push({ ...entry, playerName: name });
+      }
+    });
+  }
+
+  // teamData（現在の編成）も検索対象
+  teamData.forEach(entry => {
+    if (matchesDefense(entry, sD1, sD2, sD3, sD4, sS1, sS2)) {
+      results.push({ ...entry, playerName: entry.name, isCurrent: true });
+    }
+  });
+
+  renderSearchResults(results);
+}
+
+function renderSearchResults(results) {
+  const container = document.getElementById('searchResults');
+  const allImages = { ...stImages, ...spImages };
+
+  if (results.length === 0) {
+    container.innerHTML = '<div class="search-no-results">該当する履歴がありません</div>';
+    return;
+  }
+
+  // 日付降順でソート
+  results.sort((a, b) => {
+    if (a.isCurrent && !b.isCurrent) return -1;
+    if (!a.isCurrent && b.isCurrent) return 1;
+    return parseJapaneseDate(b.date) - parseJapaneseDate(a.date);
+  });
+
+  const imgTag = (name) => {
+    if (!name) return '';
+    const src = allImages[name] || '';
+    return `<img src="${src}" alt="${name}" title="${name}">`;
+  };
+
+  let html = `<div class="search-result-count">🔍 ${results.length}件ヒット</div>`;
+
+  results.forEach(entry => {
+    const label = entry.isCurrent ? '（現在の編成）' : '';
+    html += `
+      <div class="search-result-entry">
+        <div class="search-result-header">
+          <span class="player-name">${entry.playerName}</span>
+          <span>${entry.date || ''}${label}</span>
+        </div>
+        <div class="search-result-formations">
+          <div class="search-result-group">
+            <div class="search-result-label defense">🛡 防衛</div>
+            <div class="search-result-chars defense">
+              ${[entry.D1, entry.D2, entry.D3, entry.D4].filter(Boolean).map(imgTag).join('')}
+              ${[entry.S1, entry.S2].filter(Boolean).map(imgTag).join('')}
+            </div>
+          </div>
+          <div class="search-result-group">
+            <div class="search-result-label attack">⚔ 攻め</div>
+            <div class="search-result-chars attack">
+              ${[entry.A1, entry.A2, entry.A3, entry.A4].filter(Boolean).map(imgTag).join('')}
+              ${[entry.SP1, entry.SP2].filter(Boolean).map(imgTag).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+document.getElementById('searchBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  showSearch();
+});
+
+document.getElementById('searchSectionHeader').addEventListener('click', (e) => {
+  if (e.target.closest('.section-toggle-btn')) return;
+  const content = document.getElementById('searchContent');
+  if (!content.classList.contains('hidden')) {
+    hideSearch();
+  }
+});
+
+document.getElementById('executeSearchBtn').addEventListener('click', (e) => {
+  e.preventDefault();
+  executeSearch();
+});
+
+document.getElementById('cancelSearchBtn').addEventListener('click', () => {
+  hideSearch();
+});
+
+// ========================================
 // 初期化
 // ========================================
 
@@ -1492,22 +2081,30 @@ Promise.all([
   const sortedSp = sortCharactersByPriority(spCharacterData, usageFreq, fixedTopCharactersSP);
   const allSorted = [...sortedSt, ...sortedSp];
 
-  createDropdown('userIcon', allSorted, () => {});
-  createDropdown('D1', sortedSt, () => {}); createDropdown('D2', sortedSt, () => {});
-  createDropdown('D3', sortedSt, () => {}); createDropdown('D4', sortedSt, () => {});
-  createDropdown('S1', sortedSp, () => {}); createDropdown('S2', sortedSp, () => {});
-  createDropdown('A1', sortedSt, () => {}); createDropdown('A2', sortedSt, () => {});
-  createDropdown('A3', sortedSt, () => {}); createDropdown('A4', sortedSt, () => {});
-  createDropdown('SP1', sortedSp, () => {}); createDropdown('SP2', sortedSp, () => {});
+  createDropdown('userIcon', allSorted, () => {}, { deselectable: true });
+  const ds = { deselectable: true };
+  createDropdown('D1', sortedSt, (ch) => showBadgeDialog('D1', ch), ds); createDropdown('D2', sortedSt, () => {}, ds);
+  createDropdown('D3', sortedSt, () => {}, ds); createDropdown('D4', sortedSt, () => {}, ds);
+  createDropdown('S1', sortedSp, (ch) => showBadgeDialog('S1', ch), ds); createDropdown('S2', sortedSp, (ch) => showBadgeDialog('S2', ch), ds);
+  createDropdown('A1', sortedSt, () => {}, ds); createDropdown('A2', sortedSt, () => {}, ds);
+  createDropdown('A3', sortedSt, () => {}, ds); createDropdown('A4', sortedSt, () => {}, ds);
+  createDropdown('SP1', sortedSp, () => {}, ds); createDropdown('SP2', sortedSp, () => {}, ds);
+
+  initSearchDropdowns();
 
   loadData();
   populateTable();
+});
+
+document.getElementById('anonManagerBtn').addEventListener('click', () => {
+  showAnonymousManagerDialog();
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   loadHistory();
   loadViewState();
   loadSlotsFromStorage();
+  loadAnonymousProfiles();
   updateToggleButtons();
   loadData();
   populateTable();

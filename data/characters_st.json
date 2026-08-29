@@ -384,6 +384,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/nagusa.png"
   },
   {
+    "name": "ナグサ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/nagusa_swimsuit.png"
+  },
+  {
     "name": "ナツ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/natsu.png"
   },
@@ -446,6 +450,10 @@
   {
     "name": "ハルカ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/haruka.png"
+  },
+  {
+    "name": "ハルカ（ドレス）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/haruka_dress.png"
   },
   {
     "name": "ハルナ",
@@ -708,7 +716,35 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/syokuhou.png"
   },
   {
-    "name": "ハルカ（ドレス）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/haruka_dress.png"
+    "name": "キサキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kisaki_swimsuit.png"
+  },
+  {
+    "name": "シュン（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shun_swimsuit.png"
+  },
+  {
+    "name": "シュエリン（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shueirin_swimsuit.png"
+  },
+  {
+    "name": "イロハ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/iroha_swimsuit.png"
+  },
+  {
+    "name": "マコト（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/makoto_swimsuit.png"
+  },
+  {
+    "name": "サツキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/satsuki_swimsuit.png"
+  },
+  {
+    "name": "ココロ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/cocoro.png"
+  },
+  {
+    "name": "コトネ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kotone.png"
   }
 ]

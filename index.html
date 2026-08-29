@@ -66,7 +66,10 @@
               <label>ユーザー</label>
               <div class="user-input-wrapper">
                 <div class="dropdown-wrapper" id="dropdown-userIcon"></div>
-                <input type="text" id="username" placeholder="ユーザー名" required>
+                <div class="username-autocomplete-wrapper">
+                  <input type="text" id="username" placeholder="ユーザー名" required autocomplete="off">
+                  <div id="usernameSuggestions" class="username-suggestions"></div>
+                </div>
               </div>
             </div>
           </div>
@@ -139,6 +142,49 @@
       </div>
     </section>
 
+    <section class="search-section">
+      <div class="section-header with-toggle" id="searchSectionHeader">
+        <span class="section-icon">🔍</span>
+        <h2>攻め履歴検索</h2>
+        <button class="section-toggle-btn" id="searchBtn">
+          <span>🔍</span> 検索
+        </button>
+      </div>
+
+      <div class="search-content hidden" id="searchContent">
+        <div id="searchForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="group-label defense-label">🛡 防衛 (STRIKER)</label>
+              <div class="char-slots">
+                <div class="dropdown-wrapper" id="dropdown-search-D1"></div>
+                <div class="dropdown-wrapper" id="dropdown-search-D2"></div>
+                <div class="dropdown-wrapper" id="dropdown-search-D3"></div>
+                <div class="dropdown-wrapper" id="dropdown-search-D4"></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="group-label defense-label">🛡 防衛 (SPECIAL)</label>
+              <div class="char-slots">
+                <div class="dropdown-wrapper" id="dropdown-search-S1"></div>
+                <div class="dropdown-wrapper" id="dropdown-search-S2"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="executeSearchBtn" class="btn btn-primary">
+              <span class="btn-icon">🔍</span> 検索実行
+            </button>
+            <button id="cancelSearchBtn" class="btn btn-secondary">
+              <span class="btn-icon">✖</span> 閉じる
+            </button>
+          </div>
+        </div>
+        <div id="searchResults"></div>
+      </div>
+    </section>
+
     <section class="tools-section">
       <!-- PC専用: エクスポート・インポート -->
       <button id="exportBtn" class="btn btn-tool tools-pc-only">
@@ -164,6 +210,9 @@
       </button>
       <button id="loadBtn" class="btn btn-tool tools-extra">
         <span class="btn-icon">📂</span> ロード
+      </button>
+      <button id="anonManagerBtn" class="btn btn-tool tools-extra">
+        <span class="btn-icon">🎭</span> 匿名振り分け
       </button>
       <!-- スマホ専用: 格納トグル -->
       <button id="toolsMoreBtn" class="btn btn-tool tools-more-btn">
