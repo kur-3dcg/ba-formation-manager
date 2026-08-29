@@ -237,11 +237,42 @@ function addAnonymousFingerprint(profileName, fp) {
   saveAnonymousProfiles();
 }
 
+// 匿名の履歴をフィンガープリントで振り分け先に移行する
+function migrateAnonymousHistory(profileName, fp) {
+  const anonHist = historyMap['匿名'];
+  if (!anonHist || !anonHist.length) return;
+
+  const fpEmpty = !fp.D1 && !fp.S1 && !fp.S2;
+  const toMove = [];
+  const toKeep = [];
+
+  anonHist.forEach(entry => {
+    // フィンガープリントが空の場合は全件移行、そうでなければ一致するものだけ
+    if (fpEmpty || fingerprintMatch(getFingerprintFromEntry(entry), fp)) {
+      toMove.push({ ...entry, name: profileName });
+    } else {
+      toKeep.push(entry);
+    }
+  });
+
+  if (toMove.length === 0) return;
+
+  if (!historyMap[profileName]) historyMap[profileName] = [];
+  // 既存の履歴と結合し日付順（新しい順）に整列
+  historyMap[profileName] = [...historyMap[profileName], ...toMove]
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  historyMap['匿名'] = toKeep;
+  saveHistory();
+}
+
 function assignToProfile(entryIndex, profileName, fp) {
   const entry = teamData[entryIndex];
   entry.name = profileName;
 
-  addAnonymousFingerprint(profileName, fp);
+  // 匿名（番号なし）はフィンガープリントを保存しない（判別不能扱い）
+  if (profileName !== '匿名') {
+    addAnonymousFingerprint(profileName, fp);
+  }
 
   // 既存の同名エントリがあれば履歴保存して上書き（重複排除）
   const existingIdx = teamData.findIndex((e, i) => e.name === profileName && i !== entryIndex);
@@ -255,14 +286,54 @@ function assignToProfile(entryIndex, profileName, fp) {
 }
 
 function handleAnonymousEntry(entryIndex, fp) {
+  // D1・S1・S2 が全て未設定の場合は判別不能として即匿名に
+  if (!fp.D1 && !fp.S1 && !fp.S2) {
+    assignToProfile(entryIndex, '匿名', fp);
+    return;
+  }
   const matches = matchAnonymousFingerprint(fp);
   if (matches.length === 0) {
-    assignToProfile(entryIndex, getNextAnonymousId(), fp);
+    // 判別不能 → 匿名（番号なし）に履歴として蓄積
+    assignToProfile(entryIndex, '匿名', fp);
   } else if (matches.length === 1) {
-    assignToProfile(entryIndex, matches[0], fp);
+    // 1件一致 → 確認ダイアログ
+    showSingleMatchConfirmDialog(entryIndex, matches[0], fp);
   } else {
+    // 複数一致 → 選択ダイアログ
     showDisambiguationDialog(entryIndex, matches, fp);
   }
+}
+
+function showSingleMatchConfirmDialog(entryIndex, profileName, fp) {
+  const allImages = { ...stImages, ...spImages };
+
+  function getRecentDefense(name) {
+    const current = teamData.find(e => e.name === name);
+    if (current) return current;
+    const hist = historyMap[name];
+    return hist && hist.length ? hist[0] : null;
+  }
+
+  const def = getRecentDefense(profileName);
+  const imgs = def ? ['D1','D2','D3','D4','S1','S2']
+    .filter(s => def[s])
+    .map(s => `<img src="${allImages[def[s]] || ''}" title="${def[s]}">`)
+    .join('') : '（防衛なし）';
+
+  Swal.fire({
+    title: '匿名の判別',
+    html: `<p>育成状態が一致する <b>${profileName}</b> さんですか？</p>
+      <div class="anon-choice-imgs">${imgs}</div>`,
+    showCancelButton: true,
+    confirmButtonText: 'はい（割り当てる）',
+    cancelButtonText: 'いいえ（匿名として保存）'
+  }).then(result => {
+    if (result.isConfirmed) {
+      assignToProfile(entryIndex, profileName, fp);
+    } else {
+      assignToProfile(entryIndex, '匿名', fp);
+    }
+  });
 }
 
 function showDisambiguationDialog(entryIndex, matches, fp) {
@@ -311,95 +382,306 @@ function showDisambiguationDialog(entryIndex, matches, fp) {
   });
 }
 
-function showAnonymousManagerDialog() {
-  const anonEntries = teamData
-    .map((e, i) => ({ entry: e, index: i }))
-    .filter(({ entry }) => entry.name === '匿名');
+// 匿名関連データの正規化・再構築（ダイアログ前に実行）
+function normalizeAnonymousData() {
+  const log = [];
 
-  if (anonEntries.length === 0) {
+  // --- A-1. teamData に '匿名' が複数 → 最新1件を残して historyMap['匿名'] へ ---
+  const anonInTeam = teamData
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => e.name === '匿名')
+    .sort((a, b) => (b.e.date || '').localeCompare(a.e.date || ''));
+
+  if (anonInTeam.length > 1) {
+    if (!historyMap['匿名']) historyMap['匿名'] = [];
+    anonInTeam.slice(1).sort((a, b) => b.i - a.i).forEach(({ e, i }) => {
+      historyMap['匿名'].push({ ...e });
+      teamData.splice(i, 1);
+    });
+    log.push(`匿名を${anonInTeam.length}件→1件に統合`);
+  }
+
+  // --- A-2. 匿名_XXX 以外の匿名バリアント名を 匿名_XXX 形式に変換 ---
+  // 対象: '匿名' で始まるが '匿名' でも '匿名_\d+' でもない名前
+  const nonStdNames = new Set();
+  teamData.forEach(e => {
+    if (e.name && e.name !== '匿名' && /^匿名/.test(e.name) && !/^匿名_\d+$/.test(e.name))
+      nonStdNames.add(e.name);
+  });
+  Object.keys(historyMap).forEach(k => {
+    if (k && k !== '匿名' && /^匿名/.test(k) && !/^匿名_\d+$/.test(k))
+      nonStdNames.add(k);
+  });
+
+  if (nonStdNames.size > 0) {
+    // 使用済み番号を teamData + historyMap から収集
+    const usedNums = new Set(
+      [...teamData.map(e => e.name), ...Object.keys(historyMap)]
+        .filter(n => /^匿名_\d+$/.test(n))
+        .map(n => parseInt(n.replace('匿名_', '')))
+    );
+    let nextNum = 1;
+    const nextId = () => {
+      while (usedNums.has(nextNum)) nextNum++;
+      const n = nextNum++;
+      usedNums.add(n);
+      return `匿名_${String(n).padStart(3, '0')}`;
+    };
+
+    const nameMap = {};
+    nonStdNames.forEach(old => { nameMap[old] = nextId(); });
+
+    // teamData のエントリ名を変換
+    teamData.forEach(e => { if (nameMap[e.name]) e.name = nameMap[e.name]; });
+
+    // historyMap のキー名と内部の name を変換
+    Object.entries(nameMap).forEach(([oldName, newName]) => {
+      if (historyMap[oldName]) {
+        if (!historyMap[newName]) historyMap[newName] = [];
+        historyMap[newName].push(...historyMap[oldName].map(e => ({ ...e, name: newName })));
+        delete historyMap[oldName];
+      }
+    });
+    // 他キーの historyMap 内エントリの name も変換
+    Object.keys(historyMap).forEach(key => {
+      historyMap[key] = historyMap[key].map(e => ({ ...e, name: nameMap[e.name] || e.name }));
+    });
+
+    Object.entries(nameMap).forEach(([old, nw]) => log.push(`"${old}" → "${nw}"`));
+  }
+
+  // --- B. anonymousProfiles を teamData の現在エントリのみから再構築 ---
+  // historyMap は含めない（テーブルにない幽霊プロファイルを出さないため）
+  anonymousProfiles = {};
+  teamData.forEach(e => {
+    if (!/^匿名_\d+$/.test(e.name)) return;
+    const fp = getFingerprintFromEntry(e);
+    if (!fp.D1 && !fp.S1 && !fp.S2) return;
+    if (!anonymousProfiles[e.name]) anonymousProfiles[e.name] = [];
+    if (!anonymousProfiles[e.name].some(f => fingerprintMatch(f, fp)))
+      anonymousProfiles[e.name].push(fp);
+  });
+
+  saveData();
+  saveHistory();
+  saveAnonymousProfiles();
+  populateTable();
+  return log;
+}
+
+async function showAnonymousManagerDialog() {
+  const allImages = { ...stImages, ...spImages };
+
+  // データを正規化してからダイアログを開く
+  const normLog = normalizeAnonymousData();
+  if (normLog.length > 0) {
+    await Swal.fire({
+      title: 'データを整理しました',
+      html: normLog.map(l => `<div style="font-size:0.9em;text-align:left;">・${l}</div>`).join(''),
+      icon: 'info',
+      confirmButtonText: '振り分けへ進む',
+    });
+  }
+
+  // 現在エントリ＋履歴をアイテムリストに展開
+  const currentEntry = teamData.find(e => e.name === '匿名');
+  const histEntries = historyMap['匿名'] || [];
+  const items = [];
+  if (currentEntry) items.push({ entry: currentEntry, source: 'current' });
+  histEntries.forEach((entry, hi) => items.push({ entry, source: 'history', hi }));
+
+  if (items.length === 0) {
     Swal.fire('完了', '振り分け対象の「匿名」エントリはありません', 'info');
     return;
   }
 
-  // 指紋でグループ化
-  const groups = [];
-  anonEntries.forEach(({ entry, index }) => {
-    const fp = getFingerprintFromEntry(entry);
-    const existing = groups.find(g => fingerprintMatch(g.fp, fp));
-    if (existing) {
-      existing.indices.push(index);
-    } else {
-      groups.push({ fp, indices: [index], entry });
-    }
-  });
+  // 振り分け先プロファイルリスト（ダイアログ内で新規追加可能）
+  let profiles = [...Object.keys(anonymousProfiles)];
+  // assignments: itemKey -> profileName
+  const assignments = {};
 
-  let groupIdx = 0;
-
-  function processNextGroup() {
-    if (groupIdx >= groups.length) {
-      Swal.fire('完了', '匿名振り分けが完了しました', 'success');
-      return;
-    }
-    const group = groups[groupIdx];
-    const allImages = { ...stImages, ...spImages };
-    const def = group.entry;
-    const defImgs = ['D1','D2','D3','D4','S1','S2']
-      .filter(s => def[s])
-      .map(s => `<img src="${allImages[def[s]] || ''}" title="${def[s]}">`)
-      .join('');
-
-    const existingProfiles = Object.keys(anonymousProfiles);
-    const profileOptions = existingProfiles.map(name => {
-      const fp = anonymousProfiles[name][0] || {};
-      const imgs = ['D1','S1','S2'].map(s => fp[s] ? `<img src="${allImages[fp[s]] || ''}" title="${fp[s]}" style="width:28px;height:28px;border-radius:4px;margin:1px;">` : '').join('');
-      return `<div class="anon-choice-card">
-        <b>${name}</b>
-        <div class="anon-choice-imgs" style="display:inline-flex;">${imgs}</div>
-        <button class="btn btn-small btn-primary anon-select-btn" data-profile="${name}">選択</button>
-      </div>`;
-    }).join('');
-
-    Swal.fire({
-      title: `匿名振り分け (${groupIdx + 1}/${groups.length})`,
-      html: `<p>${group.indices.length}件の同じ編成があります</p>
-        <div class="anon-choice-imgs" style="margin-bottom:12px;">${defImgs}</div>
-        <div class="anon-choices">
-          ${profileOptions}
-          <button class="btn btn-small btn-secondary" id="anonNewBtn">新規プロファイルとして登録</button>
-        </div>`,
-      showConfirmButton: false,
-      didOpen: () => {
-        document.querySelectorAll('.anon-select-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            Swal.close();
-            const profileName = btn.dataset.profile;
-            group.indices.forEach(idx => {
-              teamData[idx].name = profileName;
-              addAnonymousFingerprint(profileName, group.fp);
-            });
-            saveData();
-            populateTable();
-            groupIdx++;
-            processNextGroup();
-          });
-        });
-        document.getElementById('anonNewBtn').addEventListener('click', () => {
-          Swal.close();
-          const newName = getNextAnonymousId();
-          group.indices.forEach(idx => {
-            teamData[idx].name = newName;
-          });
-          addAnonymousFingerprint(newName, group.fp);
-          saveData();
-          populateTable();
-          groupIdx++;
-          processNextGroup();
-        });
-      }
-    });
+  function itemKey(item) {
+    return item.source === 'current' ? 'current' : `h${item.hi}`;
   }
 
-  processNextGroup();
+  function fmtImgs(entry, slots) {
+    return slots.filter(s => entry[s])
+      .map(s => `<img src="${allImages[entry[s]] || ''}" title="${entry[s]}" class="anon-mgr-img">`)
+      .join('');
+  }
+
+  function renderProfilesBar() {
+    if (profiles.length === 0) return '<span class="anon-mgr-no-profile">プロファイルなし（新規ボタンで作成）</span>';
+    // teamData にある（テーブル表示中）プロファイルのみ表示
+    const activeProfiles = profiles.filter(name => teamData.some(e => e.name === name));
+    if (activeProfiles.length === 0) return '<span class="anon-mgr-no-profile">登録済みプロファイルなし（新規ボタンで作成）</span>';
+    return activeProfiles.map(name => {
+      const def = teamData.find(e => e.name === name);
+      const imgs = def ? fmtImgs(def, ['D1','D2','D3','D4','S1','S2']) : '';
+      return `<div class="anon-mgr-profile-card">
+        <span class="anon-mgr-profile-name">${name}</span>
+        <div>${imgs || '<span class="anon-mgr-empty">データなし</span>'}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderItem(item) {
+    const key = itemKey(item);
+    const e = item.entry;
+    const assigned = assignments[key];
+    const defImgs = fmtImgs(e, ['D1','D2','D3','D4','S1','S2']);
+    const atkImgs = fmtImgs(e, ['A1','A2','A3','A4','SP1','SP2']);
+
+    // teamData にある（テーブル表示中）プロファイルのみボタンを出す
+    const activeProfiles = profiles.filter(name => teamData.some(e => e.name === name));
+    const assignBtns = activeProfiles.map(name => {
+      const num = name.replace('匿名_', '');
+      const active = assigned === name;
+      return `<button class="btn btn-small anon-mgr-assign-btn ${active ? 'anon-mgr-btn-active' : ''}"
+        data-key="${key}" data-profile="${name}">${num}</button>`;
+    }).join('');
+
+    return `<div class="anon-mgr-item ${assigned ? 'anon-mgr-item-assigned' : ''}" data-key="${key}">
+      <div class="anon-mgr-item-header">
+        <span class="anon-mgr-date">${item.source === 'current' ? '【現在】' : ''}${e.date || '日付不明'}</span>
+        ${assigned
+          ? `<span class="anon-mgr-badge">${assigned}</span>`
+          : '<span class="anon-mgr-unassigned">未振り分け</span>'}
+      </div>
+      <div class="anon-mgr-formations">
+        <div>🛡 ${defImgs || '<span class="anon-mgr-empty">未設定</span>'}</div>
+        <div>⚔ ${atkImgs || '<span class="anon-mgr-empty">未設定</span>'}</div>
+      </div>
+      <div class="anon-mgr-btns">
+        ${assignBtns}
+        <button class="btn btn-small anon-mgr-new-btn" data-key="${key}">＋新規</button>
+      </div>
+    </div>`;
+  }
+
+  function renderAll() {
+    return `
+      <div class="anon-mgr-profiles-bar">${renderProfilesBar()}</div>
+      <div class="anon-mgr-list">${items.map(renderItem).join('')}</div>`;
+  }
+
+  Swal.fire({
+    title: '🎭 匿名振り分け',
+    html: renderAll(),
+    width: '680px',
+    showCancelButton: true,
+    confirmButtonText: '保存して閉じる',
+    cancelButtonText: 'キャンセル',
+    customClass: { htmlContainer: 'anon-mgr-container' },
+    didOpen: () => {
+      const container = Swal.getHtmlContainer();
+
+      container.addEventListener('click', e => {
+        // 番号ボタン → 割り当て
+        const assignBtn = e.target.closest('.anon-mgr-assign-btn');
+        if (assignBtn) {
+          const key = assignBtn.dataset.key;
+          const profile = assignBtn.dataset.profile;
+          // 同じボタンを再クリックで解除
+          assignments[key] = assignments[key] === profile ? null : profile;
+          refreshItem(key);
+          return;
+        }
+
+        // 新規ボタン → プロファイル作成して即割り当て
+        const newBtn = e.target.closest('.anon-mgr-new-btn');
+        if (newBtn) {
+          const key = newBtn.dataset.key;
+          const newName = getNextAnonymousId();
+          profiles.push(newName);
+          assignments[key] = newName;
+          // プロファイルバーと全アイテムを再描画
+          container.innerHTML = renderAll();
+          return;
+        }
+      });
+
+      function refreshItem(key) {
+        const item = items.find(i => itemKey(i) === key);
+        const oldEl = container.querySelector(`.anon-mgr-item[data-key="${key}"]`);
+        if (oldEl) oldEl.outerHTML = renderItem(item);
+      }
+    }
+  }).then(result => {
+    if (!result.isConfirmed) return;
+    applyManagerAssignments(assignments, items);
+  });
+}
+
+function applyManagerAssignments(assignments, items) {
+  const histIndicesToRemove = [];
+  // 現在エントリの割り当てで teamData に追加済みのプロファイル
+  const profilesWithCurrent = new Set();
+
+  // 1. 現在エントリの処理
+  const currentItem = items.find(i => i.source === 'current');
+  if (currentItem && assignments['current']) {
+    const profileName = assignments['current'];
+    const idx = teamData.findIndex(e => e.name === '匿名');
+    if (idx !== -1) {
+      teamData[idx].name = profileName;
+      addAnonymousFingerprint(profileName, getFingerprintFromEntry(teamData[idx]));
+      profilesWithCurrent.add(profileName);
+      // 同名が既存にあれば履歴に退避して統合
+      const dupIdx = teamData.findIndex((e, i) => e.name === profileName && i !== idx);
+      if (dupIdx !== -1) {
+        saveToHistory(profileName, { ...teamData[dupIdx] });
+        teamData.splice(dupIdx, 1);
+      }
+    }
+  }
+
+  // 2. 履歴エントリをプロファイルごとにグループ化（新しい順）
+  const histByProfile = {};
+  items.forEach(item => {
+    if (item.source !== 'history') return;
+    const profileName = assignments[`h${item.hi}`];
+    if (!profileName) return;
+    if (!histByProfile[profileName]) histByProfile[profileName] = [];
+    histByProfile[profileName].push(item);
+  });
+
+  // 3. プロファイルごとに処理
+  Object.entries(histByProfile).forEach(([profileName, assignedItems]) => {
+    // 日付降順（新しい順）
+    assignedItems.sort((a, b) => (b.entry.date || '').localeCompare(a.entry.date || ''));
+
+    // このプロファイルが既に teamData に存在するか
+    let hasCurrent = profilesWithCurrent.has(profileName)
+      || teamData.some(e => e.name === profileName);
+
+    assignedItems.forEach(item => {
+      const entry = historyMap['匿名'] && historyMap['匿名'][item.hi];
+      if (!entry) return;
+      histIndicesToRemove.push(item.hi);
+
+      if (!hasCurrent) {
+        // teamData に現在エントリとして追加
+        teamData.push({ ...entry, name: profileName });
+        addAnonymousFingerprint(profileName, getFingerprintFromEntry(entry));
+        hasCurrent = true;
+      } else {
+        // 履歴に追加
+        if (!historyMap[profileName]) historyMap[profileName] = [];
+        historyMap[profileName].push({ ...entry, name: profileName });
+      }
+    });
+  });
+
+  // 4. 匿名履歴から振り分け済みを削除（インデックスずれ防止のため降順）
+  histIndicesToRemove.sort((a, b) => b - a).forEach(hi => {
+    if (historyMap['匿名']) historyMap['匿名'].splice(hi, 1);
+  });
+
+  saveData();
+  saveHistory();
+  populateTable();
+  Swal.fire('完了', '振り分けが完了しました', 'success');
 }
 
 // ========================================
@@ -536,6 +818,7 @@ function updateDropdownBadge(slot) {
 }
 
 function showBadgeDialog(slot, charName) {
+  if (!charName) return; // 選択解除時は何もしない
   let level = formBadgeValues[slot] || 6;
 
   Swal.fire({
