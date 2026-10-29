@@ -20,6 +20,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/ako.png"
   },
   {
+    "name": "アズサ（レーシング）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/azusa_racing.png"
+  },
+  {
     "name": "アツコ（水着）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/atsuko_swimsuit.png"
   },
@@ -40,6 +44,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/ichika_swimsuit.png"
   },
   {
+    "name": "イブキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/ibuki_swimsuit.png"
+  },
+  {
     "name": "イロハ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/iroha.png"
   },
@@ -56,8 +64,16 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/erika.png"
   },
   {
+    "name": "エリナ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/erina.png"
+  },
+  {
     "name": "カエデ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/kaede.png"
+  },
+  {
+    "name": "カスミ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/kasumi_swimsuit.png"
   },
   {
     "name": "カリン",
@@ -150,6 +166,10 @@
   {
     "name": "セリナ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/serina.png"
+  },
+  {
+    "name": "チアキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/tiaki_swimsuit.png"
   },
   {
     "name": "チェリノ（温泉）",
@@ -320,6 +340,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/yoshimi.png"
   },
   {
+    "name": "ラナ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/rana.png"
+  },
+  {
     "name": "リオ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/rio.png"
   },
@@ -338,21 +362,5 @@
   {
     "name": "初音ミク",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/miku.png"
-  },
-  {
-    "name": "チアキ（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/tiaki_swimsuit.png"
-  },
-  {
-    "name": "イブキ（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/ibuki_swimsuit.png"
-  },
-  {
-    "name": "カスミ（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/kasumi_swimsuit.png"
-  },
-  {
-    "name": "エリナ",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/sp/erina.png"
   }
 ]

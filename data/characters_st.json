@@ -68,6 +68,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/aru_newyear.png"
   },
   {
+    "name": "アンナ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/anna.png"
+  },
+  {
     "name": "イオリ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/iori.png"
   },
@@ -98,6 +102,10 @@
   {
     "name": "イブキ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/ibuki.png"
+  },
+  {
+    "name": "イロハ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/iroha_swimsuit.png"
   },
   {
     "name": "ウイ",
@@ -176,6 +184,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kikyou.png"
   },
   {
+    "name": "キサキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kisaki_swimsuit.png"
+  },
+  {
     "name": "キララ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kirara.png"
   },
@@ -196,8 +208,16 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kokona.png"
   },
   {
+    "name": "ココロ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/cocoro.png"
+  },
+  {
     "name": "コタマ（キャンプ）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kotama_camp.png"
+  },
+  {
+    "name": "コトネ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kotone.png"
   },
   {
     "name": "コトリ",
@@ -248,8 +268,16 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/sakurako_idol.png"
   },
   {
+    "name": "サツキ（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/satsuki_swimsuit.png"
+  },
+  {
     "name": "シグレ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/sigure.png"
+  },
+  {
+    "name": "シュエリン（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shueirin_swimsuit.png"
   },
   {
     "name": "ジュリ（アルバイト）",
@@ -258,6 +286,10 @@
   {
     "name": "シュン",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/syun.png"
+  },
+  {
+    "name": "シュン（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shun_swimsuit.png"
   },
   {
     "name": "シュン（幼女）",
@@ -354,6 +386,10 @@
   {
     "name": "ツバキ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/tubaki.png"
+  },
+  {
+    "name": "ツムギ",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/tsumugi.png"
   },
   {
     "name": "ツルギ",
@@ -496,6 +532,10 @@
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hifumi.png"
   },
   {
+    "name": "ヒフミ（レーシング）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hifumi_racing.png"
+  },
+  {
     "name": "ヒヨリ（水着）",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/hiyori_swimsuit.png"
   },
@@ -530,6 +570,10 @@
   {
     "name": "マキ",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/maki.png"
+  },
+  {
+    "name": "マコト（水着）",
+    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/makoto_swimsuit.png"
   },
   {
     "name": "マリー（アイドル）",
@@ -714,41 +758,5 @@
   {
     "name": "食蜂操祈",
     "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/syokuhou.png"
-  },
-  {
-    "name": "キサキ（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kisaki_swimsuit.png"
-  },
-  {
-    "name": "シュン（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shun_swimsuit.png"
-  },
-  {
-    "name": "シュエリン（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/shueirin_swimsuit.png"
-  },
-  {
-    "name": "イロハ（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/iroha_swimsuit.png"
-  },
-  {
-    "name": "マコト（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/makoto_swimsuit.png"
-  },
-  {
-    "name": "サツキ（水着）",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/satsuki_swimsuit.png"
-  },
-  {
-    "name": "ココロ",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/cocoro.png"
-  },
-  {
-    "name": "コトネ",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/kotone.png"
-  },
-  {
-    "name": "アンナ",
-    "image": "https://raw.githubusercontent.com/kur-3dcg/blue-archive-faceimage/main/images/st/anna.png"
   }
 ]
